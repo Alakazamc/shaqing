@@ -5,6 +5,7 @@ BH.Poster = (function () {
     '热血': ['#12294a', '#2b4d8f'], '玄幻': ['#241a3f', '#5b3a8f'], '黑色幽默': ['#2e2410', '#8a6a1f'],
     '文艺': ['#1c1c22', '#4a4a58'], '恐怖': ['#250d10', '#6e1c24'], '偶像': ['#2a1230', '#8a3a7a'],
     '荒诞': ['#12322a', '#2a7a5a'], '现实主义': ['#241d16', '#6e5a3a'], '剧情': ['#1a1a22', '#44445c'],
+    '奇幻': ['#101f2e', '#2e5a6e'], '科幻': ['#0d1a2a', '#2a4a6e'],
   };
   function wrap(ctx, text, x, y, maxW, lh, maxLines) {
     const chars = text.split(''); let line = '', lines = [];
@@ -37,7 +38,7 @@ BH.Poster = (function () {
     ctx.font = '26px sans-serif'; ctx.fillStyle = '#e8e8ee';
     ctx.fillText('🎬 杀青大吉', 44, 74);
     ctx.font = '20px sans-serif'; ctx.fillStyle = 'rgba(255,255,255,.55)';
-    const tname = { 'dianjing': '电竞线', 'xiuxian': '修仙线', 'fuhao': '富豪线', 'hegang': '鹤岗线', 'ouxiang': '偶像线', 'guaitan': '怪谈线' };
+    const tname = { 'dianjing': '电竞线', 'xiuxian': '修仙线', 'fuhao': '富豪线', 'hegang': '鹤岗线', 'ouxiang': '偶像线', 'guaitan': '怪谈线', 'shuochang': '说唱线', 'ergu': '谷子线', 'mofa': '魔法线', 'aicy': 'AI线' };
     const tk = Object.keys(S.tracks).sort((a, b) => S.tracks[b] - S.tracks[a])[0];
     ctx.fillText((tname[tk] ? tname[tk] + ' · ' : '') + report.type + '片', 44, 104);
 

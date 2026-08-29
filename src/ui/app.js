@@ -21,7 +21,12 @@
     $('#reinc-num').textContent = meta.reinc;
     const dl = BH.DIRECTOR.filter(d => meta.deaths >= d.n).pop();
     $('#director-line').textContent = meta.deaths ? (dl ? dl.t : '导演：又开工了？') : '';
-    if (challenge) { $('#challenge-banner').classList.remove('hidden'); $('#challenge-banner').textContent = '⚔️ 你收到了同题挑战：你们将拿到同一个剧组。看看谁能把这条命拍得更好。'; }
+    if (challenge) {
+      $('#challenge-banner').classList.remove('hidden');
+      $('#challenge-banner').textContent = challengeInfo
+        ? `⚔️ 同题挑战：TA 用同一副牌拍出了 ${challengeInfo.t} · 票房 ${challengeInfo.b} 亿 · 评分 ${challengeInfo.s.toFixed(1)}。同一副牌，看你的了。`
+        : '⚔️ 你收到了同题挑战：你们将拿到同一个剧组。看看谁能把这条命拍得更好。';
+    }
     show('#screen-title');
   }
   $('#btn-start').onclick = () => {
@@ -377,6 +382,13 @@
     });
     show('#screen-poster');
     if (report.score >= 8.5 || report.box >= 50) BH.SFX.win();
+    // 挑战对比
+    if (challengeInfo) {
+      const win = report.box > challengeInfo.b;
+      const cr = $('#challenge-result');
+      cr.classList.remove('hidden');
+      cr.textContent = `⚔️ 挑战结果：你 ${report.box} 亿 vs TA ${challengeInfo.b} 亿 —— ${win ? '挑战成功！同一副牌，你打得更好。' : '未能超越，同一副牌，再试一次？'}`;
+    }
     // 存当前结算数据供复制
     appCtx.report = report; appCtx.rank = rank;
   }
@@ -400,8 +412,11 @@
     ta.select(); try { document.execCommand('copy'); done(); } catch (e) {} ta.remove();
   }
   $('#btn-challenge').onclick = () => {
-    const url = location.origin === 'null' ? location.href.split('?')[0] + '?seed=' + S.seed + '&c=1'
-      : location.href.split('?')[0] + '?seed=' + S.seed + '&c=1';
+    if (!appCtx.report) return;
+    const base = location.href.split('?')[0];
+    const url = base + '?seed=' + S.seed + '&c=1'
+      + '&t=' + encodeURIComponent(appCtx.report.title.full)
+      + '&b=' + appCtx.report.box + '&s=' + appCtx.report.score;
     const done = () => { $('#btn-challenge').textContent = '✅ 挑战已复制，发给朋友'; setTimeout(() => $('#btn-challenge').textContent = '⚔️ 发起同题挑战', 1800); };
     if (navigator.clipboard && navigator.clipboard.writeText) navigator.clipboard.writeText(url).then(done).catch(() => fallbackCopy(url, done));
     else fallbackCopy(url, done);
@@ -433,10 +448,14 @@
   $('#btn-dex-back').onclick = renderTitle;
 
   // ---------- URL 挑战 ----------
-  let challengeSeed = null;
+  let challengeSeed = null, challengeInfo = null;
   (function parseURL() {
     const q = new URLSearchParams(location.search);
-    if (q.get('seed')) { challengeSeed = q.get('seed'); challenge = !!q.get('c') || !!q.get('seed'); }
+    if (q.get('seed')) {
+      challengeSeed = q.get('seed');
+      challenge = true;
+      if (q.get('t')) challengeInfo = { t: q.get('t'), b: +q.get('b') || 0, s: +q.get('s') || 0 };
+    }
   })();
 
   // ---------- 启动 ----------

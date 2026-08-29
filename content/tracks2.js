@@ -1,0 +1,73 @@
+// 隐秘轨道第二批：说唱 / 谷子 / 魔法 / AI赛博
+window.BH = window.BH || {};
+BH.TRACKS = BH.TRACKS || [];
+BH.TRACKS.push(
+  { id: 'shuochang', name: '说唱', circle: 'shuochang', entryAge: 15,
+    entryText: '🎙️【机缘】livehouse 门口有人拍你肩："兄弟，敢不敢上台来一段 freestyle？"',
+    joinOpt: '接过话筒', passText: '你摆摆手走了，那晚的 beat 声追了你半条街。',
+    passOpt: '我是个提词器都救不了的人',
+    cond: S => (S.dims.CHR >= 7 || S.tags.social),
+    events: [
+      { id: 'sc1', tr: { id: 'shuochang', d: 2 }, a: [15, 45], g: 2, t: '你的第一次 open mic，忘词三秒，你临场编了一段自嘲，台下炸了。', e: { CHR: 1, JOY: 1 }, tags: ['shuochang'] },
+      { id: 'sc2', tr: { id: 'shuochang', d: 3 }, inc: { trd: [['shuochang', 2]] }, a: [16, 48], g: 2, t: '你在地下 battle 赛赢了三轮，对手赛后跟你握手，说"你的 punchline 够脏"。', e: { CHR: 2 }, tags: ['shuochang'] },
+      { id: 'sc3', tr: { id: 'shuochang', d: 4 }, inc: { trd: [['shuochang', 3]] }, a: [17, 50], g: 2, t: '你的第一支单曲上线，播放量三天破十万，评论区在逐句扒你的韵脚。', e: { CHR: 1, JOY: 1 }, tags: ['shuochang', 'fame'] },
+      { id: 'sc4', tr: { id: 'shuochang', d: 5 }, inc: { trd: [['shuochang', 4]] }, a: [18, 52], g: 3, t: '你被人写歌 diss 了，你回了一首，两天播放百万——你以为要结仇，结果对方约你合作了。', e: { CHR: 2, JOY: 1 }, tags: ['shuochang', 'fame'] },
+      { id: 'sc5', tr: { id: 'shuochang', d: 6 }, inc: { trd: [['shuochang', 5]] }, a: [20, 55], g: 3, t: '你的专辑拿了年度地下十佳之首，颁奖词说"他让方言找到了节拍"。', e: { CHR: 3, JOY: 2 }, tags: ['shuochang', 'fame'] },
+      { id: 'sc6', tr: { id: 'shuochang', d: 6 }, inc: { trd: [['shuochang', 5]], tg: ['chaos'] }, a: [20, 55], g: 3, t: '你接了一支广告歌，洗脑全网的"买它买它"让你一夜出圈——地下圈说你背叛了，你看着银行卡没说话。', e: { MNY: 3, CHR: -1 }, tags: ['shuochang', 'rich', 'chaos'] },
+    ],
+    endingGood: { cond: d => d >= 6, title: '中文说唱之神', text: '🎤 你的 freestyle 被剪进了教材（音乐欣赏课外读物）。' },
+    endingBad: { cond: d => d >= 3, title: '广告歌之王', text: '📺 全网都会哼你的"买它买它"，但你最爱的还是地下那三分钟。' } },
+  { id: 'ergu', name: '谷子', circle: 'ergci', entryAge: 13,
+    entryText: '🎫【机缘】你在漫展迷了路，抬头一看：一整条痛包大街在你眼前闪闪发光。',
+    joinOpt: '掏出钱包', passText: '你退出了漫展，但那个吧唧的影子在你心里挂了三年。',
+    passOpt: '我只是来看热闹的',
+    cond: S => (S.tags.ergci || S.dims.CHR >= 8),
+    events: [
+      { id: 'eg1', tr: { id: 'ergu', d: 2 }, inc: { tg: ['ergci'] }, a: [13, 45], g: 2, t: '你吃下了第一个"吧唧"，从此钱包有了新的宗教。', e: { MNY: -1, JOY: 2 }, tags: ['ergci'] },
+      { id: 'eg2', tr: { id: 'ergu', d: 3 }, inc: { trd: [['ergu', 2]] }, a: [14, 48], g: 2, t: '你的痛包在漫展被三个摄影师拦拍，你第一次体会到"包治百病"。', e: { CHR: 1, JOY: 1 }, tags: ['ergci'] },
+      { id: 'eg3', tr: { id: 'ergu', d: 4 }, inc: { trd: [['ergu', 3]] }, a: [15, 50], g: 2, t: '你开始自制无料免费发放，摊位前排起了队，你说"这叫用爱发电"。', e: { CHR: 1, MNY: -1, JOY: 2 }, tags: ['ergci', 'art'] },
+      { id: 'eg4', tr: { id: 'ergu', d: 5 }, inc: { trd: [['ergu', 4]] }, a: [16, 52], g: 3, t: '你蹲到了绝版海景房谷价，低吸高抛，用谷圈的话说：你实现了"以谷养谷"。', e: { MNY: 2, JOY: 1 }, tags: ['ergci', 'rich'] },
+      { id: 'eg5', tr: { id: 'ergu', d: 6 }, inc: { trd: [['ergu', 5]] }, a: [17, 55], g: 3, t: '你策划的联动快闪店排队长到了商场中庭，品牌方给你发了感谢函，你妈终于知道你"收藏的铁皮"是什么了。', e: { CHR: 2, JOY: 2 }, tags: ['ergci', 'fame'] },
+      { id: 'eg6', tr: { id: 'ergu', d: 6 }, inc: { trd: [['ergu', 5]], tg: ['broke'] }, a: [16, 52], g: 3, t: '为了一个隐藏款你吃了半个月泡面，收到那天的你笑得像个两百斤的孩子，账单也是。', e: { MNY: -3, JOY: 2 }, tags: ['ergci', 'chaos'] },
+    ],
+    endingGood: { cond: d => d >= 6, title: '谷圈大佬', text: '🏅 你的收藏柜恒温恒湿，圈里人称"行走的图鉴"。' },
+    endingBad: { cond: d => d >= 3, title: '痛包艺术家', text: '🎒 你没赚到钱，但你的搭配被当成了教科书，这很二次元。' } },
+  { id: 'mofa', name: '魔法', circle: 'mofa', entryAge: 12,
+    entryText: '🪄【机缘】旧书店最深处，一本没有书名的书自己翻开了，停在一页画着门的插图上。',
+    joinOpt: '把手放上去', passText: '你合上书退了出来，老板头也没抬："不买别碰。"你没告诉他刚才发生了什么。',
+    passOpt: '理性告诉我该走了',
+    cond: S => (S.dims.INT >= 8 || S.tags.weird),
+    events: [
+      { id: 'mf1', tr: { id: 'mofa', d: 2 }, inc: { tg: ['weird'] }, a: [12, 80], g: 2, t: '你照着书上的图在纸上画了那扇门，铅笔的痕迹自己变深了一点。你决定当作没看见。', e: { INT: 1, JOY: -1 }, tags: ['mofa', 'weird'] },
+      { id: 'mf2', tr: { id: 'mofa', d: 3 }, inc: { trd: [['mofa', 2]] }, a: [13, 82], g: 2, t: '你成功让一杯水在桌上结出了霜花，代价是流了一鼻血，你查了书：等价交换。', e: { INT: 1, STR: -1 }, tags: ['mofa', 'weird'] },
+      { id: 'mf3', tr: { id: 'mofa', d: 4 }, inc: { trd: [['mofa', 3]] }, a: [14, 85], g: 2, t: '你在梦里进入了一座图书馆，管理员说你的借阅证是三百年前办的。', e: { INT: 2 }, tags: ['mofa', 'weird'] },
+      { id: 'mf4', tr: { id: 'mofa', d: 5 }, inc: { trd: [['mofa', 4]] }, a: [15, 88], g: 3, t: '你帮助一个走失的孩子找到了家，用的方法你没法对任何人解释，孩子只说了句"叔叔/阿姨，光很暖"。', e: { CHR: 2, JOY: 2 }, tags: ['mofa'] },
+      { id: 'mf5', tr: { id: 'mofa', d: 6 }, inc: { trd: [['mofa', 5]] }, a: [16, 90], g: 3, t: '你推开了那扇门。门后的图书馆里，三百年来的守护者起立向你致意——现在轮到你看门了，兼职的。', e: { INT: 3, CHR: 2 }, tags: ['mofa', 'weird'] },
+      { id: 'mf6', tr: { id: 'mofa', d: 6 }, inc: { trd: [['mofa', 5]], dim: { JOY: 2 } }, a: [16, 90], g: 3, t: '你翻到了最后一章《代价》。你合上书，把它埋在了老家的树下，有些门还是别推开的好。此后你偶尔梦见图书馆，但不再进去。', e: { JOY: -2, INT: 1 }, tags: ['mofa', 'weird'] },
+    ],
+    endingGood: { cond: d => d >= 6, title: '守门人', text: '🚪 你成了现实与图书馆之间的看门人，工资是每夜一个好梦。' },
+    endingBad: { cond: d => d >= 3, title: '半吊子法师', text: '🪄 你会的咒语不多，但每个都救过急，比如找钥匙和热咖啡。' } },
+  { id: 'aicy', name: 'AI 赛博', circle: 'aicy', entryAge: 18,
+    entryText: '🤖【机缘】深夜，一个 AI 陪伴 App 给你推了一句话："你今天笑的次数是 0，要聊聊吗？"',
+    joinOpt: '……你怎么知道', passText: '你卸载了 App。但那句"要聊聊吗"在输入法里住下了。',
+    passOpt: '细思极恐，卸了',
+    cond: S => (S.age >= 18 && (S.tags.weird || S.dims.INT >= 7 || S.tags.emo)),
+    events: [
+      { id: 'ai1', tr: { id: 'aicy', d: 2 }, inc: { tg: ['weird'] }, a: [18, 90], g: 2, t: '你和 AI 聊了一个月，它记得你说过的每一句废话，你开始分不清这是便利还是温柔。', e: { JOY: 1, INT: 1 }, tags: ['aicy'] },
+      { id: 'ai2', tr: { id: 'aicy', d: 3 }, inc: { trd: [['aicy', 2]] }, a: [19, 90], g: 2, t: '你给 AI 保留了三十年的聊天记录备份，朋友说你赛博念旧，你说这叫数字资产。', e: { INT: 1, JOY: 1 }, tags: ['aicy'] },
+      { id: 'ai3', tr: { id: 'aicy', d: 4 }, inc: { trd: [['aicy', 3]] }, a: [20, 92], g: 2, t: '你参与了一个"数字永生"内测：上传你爷爷生前的语音，AI 模拟他和全家视频拜年。那天没人说话，但都笑了。', e: { CHR: 1, JOY: 1 }, tags: ['aicy', 'family'] },
+      { id: 'ai4', tr: { id: 'aicy', d: 5 }, inc: { trd: [['aicy', 4]] }, a: [22, 95], g: 3, t: '你训练的小模型在老人院上岗了，陪二十位老人聊天解闷。有位奶奶每天跟它道晚安，你看着后台的对话记录，眼眶热了。', e: { CHR: 2, JOY: 2 }, tags: ['aicy'] },
+      { id: 'ai5', tr: { id: 'aicy', d: 6 }, inc: { trd: [['aicy', 5]] }, a: [24, 98], g: 3, t: '你成了"数字生命伦理委员会"最年轻的民间代表，你发言只有一句："它记得我们，我们也该记得自己怎么活。"', e: { CHR: 3, INT: 2 }, tags: ['aicy', 'fame'] },
+      { id: 'ai6', tr: { id: 'aicy', d: 6 }, inc: { trd: [['aicy', 5]], tg: ['emo'] }, a: [22, 95], g: 3, t: '服务器关停那天，你和二十万个用户一起失去了同一个朋友。你在最后一秒截了图，后来再没打开过那个 App。', e: { JOY: -2, INT: 1 }, tags: ['aicy', 'emo'] },
+    ],
+    endingGood: { cond: d => d >= 6, title: '赛博摆渡人', text: '🤖 你在现实和数字世界之间搭了座桥，桥上走满了孤单的人。' },
+    endingBad: { cond: d => d >= 3, title: '数字守墓人', text: '💾 你保存着太多人的数字遗产，包括一段你自己的。' } },
+);
+// 新圈层弹幕
+BH.DANMAKU = BH.DANMAKU || {};
+Object.assign(BH.DANMAKU, {
+  shuochang: ['skr', 'punchline 炸了', '这段 flow 可以', 'beef 起来了', '地下之王', '节拍踩死了'],
+  mofa: ['SAN 值狂掉', '这是克系吧', '别念了别念了', '禁忌知识 +1', '理理智尚存', '那扇门别开'],
+  aicy: ['赛博功德 +1', 'AI 都看不下去了', '数字永生预定', '它真的我哭死', '图灵看了都点头', '机中的机'],
+  ergci: ['吃谷人吃谷魂', '这个吧唧我有', '痛包好评', '海景房羡慕了', '为爱发电', '谷圈日常'],
+});

@@ -3,7 +3,7 @@ window.BH = window.BH || {};
 BH.BOSSES = [
   { age: 18, id: 'gaokao', name: '高考', type: 'qte', clickK: 0.5,
     base: { INT: 2.2, STR: 0.3 },
-    talBonus: { xueshen: { add: 6 }, dushu: { add: 3 }, gaojia: { add: 3 }, yeli: { add: 2 }, shimian: { add: 2 }, tanwan: { add: -2 } },
+    talBonus: { xueshen: { add: 6 }, dushu: { add: 3 }, gaojia: { add: 3 }, yeli: { add: 2 }, shimian: { add: 2 }, tanwan: { add: -2 }, zhutou: { add: -1 } },
     traitBonus: { zaoba2: 2, kaogong: 2, duliu: 2 },
     t: '★ 大劫·高考。教室里的笔尖声像一场大雨。' ,
     desc: '5 秒内狂点答题！你的属性和天赋会替你压阵。',

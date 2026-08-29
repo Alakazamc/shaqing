@@ -489,7 +489,7 @@ window.BH = window.BH || {};
       return mx / ds.length;
     })();
     const DEEP = 1 + maxDepth * 0.4 + DECADE_CONSIST * 0.3;
-    const base = 2.5 + S.stats.gradeSum * 0.06;
+    const base = 2.5 + S.stats.gradeSum * 0.045;
     let box = Math.round(base * AMP * DEEP * (0.9 + S.R() * 0.25));
     box = Math.max(1, box);
 
@@ -530,7 +530,7 @@ window.BH = window.BH || {};
     const R = S.R;
     // 类型
     let type = '剧情';
-    const tmap = [['dianjing', '热血'], ['xiuxian', '玄幻'], ['rich', '黑色幽默'], ['emo', '文艺'], ['guaitan', '恐怖'], ['fame', '偶像'], ['chaos', '荒诞'], ['broke', '现实主义']];
+    const tmap = [['dianjing', '热血'], ['xiuxian', '玄幻'], ['rich', '黑色幽默'], ['emo', '文艺'], ['guaitan', '恐怖'], ['fame', '偶像'], ['chaos', '荒诞'], ['broke', '现实主义'], ['shuochang', '热血'], ['ergci', '文艺'], ['mofa', '奇幻'], ['aicy', '科幻']];
     for (const [tg, ty] of tmap) if (S.tags[tg]) { type = ty; break; }
     const trackIds = Object.keys(S.tracks);
     const topTrack = trackIds.sort((a, b) => S.tracks[b] - S.tracks[a])[0];
@@ -542,6 +542,10 @@ window.BH = window.BH || {};
       hegang: ['全款拿下', '五万块的春天', '逃离进行时', '鹤岗的月光', '反向卷王'],
       ouxiang: ['出道即巅峰', '塌房倒计时', '练习生第800天', '顶流的空窗期', '打投少女'],
       guaitan: ['员工守则第七条', '凌晨的入住须知', '规则之外', '第13层', '别回头'],
+      shuochang: ['地下八英里', '忘词三秒', 'punchline之王', '买它买它', '方言有节拍'],
+      ergu: ['痛包漫步', '海景房与泡面', '吧唧收藏家', '以谷养谷', '无料之神'],
+      mofa: ['旧书店的第三层', '霜花与鼻血', '守门人日记', '那扇没推开的门', '借阅证300年'],
+      aicy: ['要聊聊吗', '赛博摆渡人', '最后一秒的截图', '数字孙子', '晚安，服务器'],
     };
     const generic = ['人生一场大梦', '平凡之路（指很平）', '岁月神偷（他偷的是我）', '大时代小人物', '春风又一吹', '人间烟火气', '无名之辈传', '热热闹闹一辈子'];
     let main;
