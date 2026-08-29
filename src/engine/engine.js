@@ -517,11 +517,22 @@ window.BH = window.BH || {};
     cand.sort((a, b) => (b.grade * 3 + (b.br ? 1 : 0)) - (a.grade * 3 + (a.br ? 1 : 0)));
     const quote = cand.length ? cand[(S.R() * Math.min(3, cand.length)) | 0].text : (S.lines[0] || {}).text || '无声之作。';
 
+    // 轨道结局判定（供 meta 收集/杀青宴）
+    const endings = [];
+    for (const t of (BH.TRACKS || [])) {
+      const d = S.tracks[t.id] || 0;
+      if (d >= 3) {
+        const good = t.endingGood && t.endingGood.cond(d);
+        const bad = t.endingBad && t.endingBad.cond(d);
+        if (good || bad) endings.push({ track: t.id, title: good ? t.endingGood.title : t.endingBad.title, good: !!good });
+      }
+    }
+
     return {
       box, score: Math.round(score * 10) / 10, amp: Math.round(AMP * 100) / 100, deep: Math.round(DEEP * 100) / 100,
       base: Math.round(base * 10) / 10,
       irony, ironyWhy, title, quote,
-      type: title.type, tracks: S.tracks, maxDepth,
+      type: title.type, tracks: S.tracks, maxDepth, endings,
       reinc: Math.max(1, Math.round(box / 10)) + (S.stats.legend ? S.stats.legend * 3 : 0),
     };
   };

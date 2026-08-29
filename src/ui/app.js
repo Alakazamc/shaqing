@@ -6,9 +6,14 @@
 
   // ---------- meta 存档 ----------
   const META_KEY = 'bh_save_v1';
-  let meta = { reinc: 0, deaths: 0, works: [], dex: {}, best: 0, sound: 0, danmu: 1, inherit: null, rigEpic: 0, bonus: 0, extra: 0 };
+  let meta = { reinc: 0, deaths: 0, works: [], dex: {}, endings: {}, ach: {}, best: 0, sound: 0, danmu: 1, inherit: null, rigEpic: 0, bonus: 0, extra: 0 };
   try { meta = Object.assign(meta, JSON.parse(localStorage.getItem(META_KEY) || '{}')); } catch (e) {}
   function saveMeta() { try { localStorage.setItem(META_KEY, JSON.stringify(meta)); } catch (e) {} }
+  function evalAch(S) {
+    for (const a of (BH.ACH || [])) {
+      if (!meta.ach[a.id]) { try { if (a.cond(meta, S || null)) meta.ach[a.id] = 1; } catch (e) {} }
+    }
+  }
 
   // ---------- 全局状态 ----------
   let S = null, pool = [], sel = [], deltas = null, pendingAsk = null, autoTimer = null, holdTimer = null, busy = false, challenge = false;
@@ -19,6 +24,8 @@
   // ---------- 片名页 ----------
   function renderTitle() {
     $('#reinc-num').textContent = meta.reinc;
+    evalAch(null); saveMeta();
+    $('#btn-feast').classList.toggle('hidden', Object.keys(meta.endings || {}).length < 5);
     const dl = BH.DIRECTOR.filter(d => meta.deaths >= d.n).pop();
     $('#director-line').textContent = meta.deaths ? (dl ? dl.t : '导演：又开工了？') : '';
     if (challenge) {
@@ -361,6 +368,8 @@
     // meta 更新
     meta.deaths++;
     if (S.deathCause) meta.dex[S.deathCause.cause] = 1;
+    for (const e of (report.endings || [])) meta.endings[e.track] = e.title;
+    evalAch(S);
     meta.works.unshift({ title: report.title.full, type: report.type, box: report.box, score: report.score, seed: String(S.seed) });
     meta.works = meta.works.slice(0, 24);
     meta.reinc += report.reinc;
@@ -423,12 +432,13 @@
   };
   $('#btn-again').onclick = () => { S = null; pendingAsk = null; challenge = false; renderTitle(); };
 
-  // ---------- 图鉴 ----------
+  // ---------- 图鉴/成就 ----------
   function renderDex(tab) {
     show('#screen-dex');
     $$('.tab-btn').forEach(b => b.classList.toggle('active', b.dataset.tab === tab));
     $('#dex-grid').classList.toggle('hidden', tab !== 'dex');
     $('#works-grid').classList.toggle('hidden', tab !== 'works');
+    $('#ach-grid').classList.toggle('hidden', tab !== 'ach');
     if (tab === 'dex') {
       const causes = {}; BH.DEATHS.forEach(d => { causes[d.death.cause] = d; });
       $('#dex-grid').innerHTML = Object.keys(causes).map(cause => {
@@ -438,12 +448,29 @@
           <b>${got ? esc(cause) : '尚未解锁'}</b>
           <div>${got ? esc(d.t.length > 34 ? d.t.slice(0, 34) + '…' : d.t) : '在另一条人生里死于这个。'}</div></div>`;
       }).join('');
-    } else {
+    } else if (tab === 'works') {
       $('#works-grid').innerHTML = meta.works.length
         ? meta.works.map(w => `<div class="dex-card got"><b>${esc(w.title)}</b><div>${w.type} · ${w.box} 亿 · ${w.score.toFixed(1)} 分</div><div style="color:#666">seed ${w.seed}</div></div>`).join('')
         : '<div class="dex-card">还没有作品。你的第一部人生电影正在等你。</div>';
+    } else {
+      const gotN = Object.keys(meta.ach || {}).length;
+      $('#ach-grid').innerHTML = `<div class="dex-card got" style="grid-column:1/-1"><b>🏆 成就 ${gotN}/${BH.ACH.length}</b><div>${gotN >= BH.ACH.length ? '全成就！导演建议你直接来上班。' : '有些成就藏在离谱的人生里。'}</div></div>`
+        + BH.ACH.map(a => {
+          const got = meta.ach[a.id];
+          return `<div class="dex-card ${got ? 'got' : 'locked'}"><div class="ic">${got ? a.emoji : '🔒'}</div><b>${got ? esc(a.name) : '???'}</b><div>${esc(a.desc)}</div></div>`;
+        }).join('');
     }
   }
+  function renderFeast() {
+    show('#screen-feast');
+    $('#feast-speech').textContent = BH.FEAST[Math.floor(Math.random() * BH.FEAST.length)];
+    $('#feast-list').innerHTML = Object.entries(meta.endings || {}).map(([k, title]) => {
+      const tr = (BH.TRACKS || []).find(t => t.id === k);
+      return `<div class="dex-card got"><b>${tr ? (tr.emoji || '🎞️') + ' ' : ''}${esc(title)}</b><div>${tr ? esc(tr.name) : ''}线结局</div></div>`;
+    }).join('') + '<div class="dex-card got"><b>👑 终身成就奖</b><div>授予：把每条命都活成片子的你</div></div>';
+  }
+  $('#btn-feast').onclick = renderFeast;
+  $('#btn-feast-back').onclick = renderTitle;
   $$('.tab-btn').forEach(b => b.onclick = () => renderDex(b.dataset.tab));
   $('#btn-dex-back').onclick = renderTitle;
 
@@ -455,6 +482,10 @@
       challengeSeed = q.get('seed');
       challenge = true;
       if (q.get('t')) challengeInfo = { t: q.get('t'), b: +q.get('b') || 0, s: +q.get('s') || 0 };
+    }
+    if (q.get('debugfeast')) { // 测试用：预置结局解锁
+      (BH.TRACKS || []).slice(0, 6).forEach(t => { meta.endings[t.id] = (t.endingGood || {}).title || t.name; });
+      saveMeta();
     }
   })();
 

@@ -23,6 +23,9 @@
         <button id="btn-shop" class="mid-btn ghost">🛒 轮回小卖部（<span id="reinc-num">0</span> 点）</button>
       </div>
       <div class="row small-row">
+        <button id="btn-feast" class="mid-btn ghost hidden">🏆 杀青宴</button>
+      </div>
+      <div class="row small-row">
         <button id="btn-sound" class="mid-btn ghost">🔇 音效：关</button>
         <button id="btn-danmu" class="mid-btn ghost">💬 弹幕：开</button>
       </div>
@@ -114,10 +117,20 @@
     <div class="dex-tabs">
       <button class="tab-btn active" data-tab="dex">🪦 死法图鉴</button>
       <button class="tab-btn" data-tab="works">🎞️ 作品架</button>
+      <button class="tab-btn" data-tab="ach">🏆 成就</button>
     </div>
     <div id="dex-grid" class="dex-grid"></div>
     <div id="works-grid" class="dex-grid hidden"></div>
+    <div id="ach-grid" class="dex-grid hidden"></div>
     <div class="bottom-bar"><button id="btn-dex-back" class="mid-btn">返回</button></div>
+  </section>
+
+  <!-- 杀青宴 -->
+  <section id="screen-feast" class="screen hidden">
+    <div class="brand" style="font-size:34px">🏆 杀青宴</div>
+    <div id="feast-speech" class="director"></div>
+    <div id="feast-list" class="dex-grid" style="grid-template-columns:1fr;margin-top:12px"></div>
+    <div class="bottom-bar"><button id="btn-feast-back" class="mid-btn">返回</button></div>
   </section>
 </div>
 <script src="src/engine/engine.js"></script>
@@ -145,6 +158,7 @@
 <script src="content/events-more5.js"></script>
 <script src="content/events-more6.js"></script>
 <script src="content/misc.js"></script>
+<script src="content/achievements.js"></script>
 <script src="src/ui/sfx.js"></script>
 <script src="src/ui/poster.js"></script>
 <script src="src/ui/app.js"></script>

@@ -69,6 +69,14 @@ for (const c of BH.CRISES) {
 for (const d of BH.DECADES) for (const o of d.opts) if (!o.name || !o.desc || !o.rt) errs.push(`路牌 ${d.age} 选项不完整`);
 const tids = new Set();
 for (const t of BH.TRAITS) { if (tids.has(t.id)) errs.push('特质重复: ' + t.id); tids.add(t.id); }
+// ===== 成就 =====
+const aids = new Set();
+for (const a of BH.ACH || []) {
+  if (aids.has(a.id)) errs.push('成就重复: ' + a.id);
+  aids.add(a.id);
+  if (!a.name || !a.emoji || !a.desc) errs.push('成就字段不完整: ' + a.id);
+  if (typeof a.cond !== 'function') errs.push('成就 cond 不是函数: ' + a.id);
+}
 
 // ===== 年龄覆盖密度 =====
 const cov = new Array(101).fill(0);
