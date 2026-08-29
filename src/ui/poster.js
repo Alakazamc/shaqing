@@ -92,6 +92,13 @@ BH.Poster = (function () {
       const tr = S.traits.map(id => { const t = BH.TRAITS.find(x => x.id === id); return t ? t.emoji + t.name : ''; }).filter(Boolean).slice(0, 4);
       drawLines(ctx, '特别出演：' + tr.join(' '), 44, y, W - 88, 26, 1, 'rgba(255,255,255,.6)', '18px sans-serif'); y += 28;
     }
+    if (S.titles && S.titles.length) {
+      const ti = S.titles.map(id => { const t = (BH.TITLES || []).find(x => x.id === id); return t ? t.emoji + t.name : ''; }).filter(Boolean).slice(0, 5);
+      drawLines(ctx, '🏅 ' + ti.join(' '), 44, y, W - 88, 26, 1, '#ffe19e', '18px sans-serif'); y += 28;
+    }
+    if (report.obsession) {
+      drawLines(ctx, '💫 ' + report.obsession, 44, y, W - 88, 26, 1, 'rgba(210,166,255,.9)', '18px sans-serif'); y += 28;
+    }
 
     // 票房构成（填充中段 + 炫耀点）
     y += 16;

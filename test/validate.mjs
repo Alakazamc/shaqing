@@ -48,6 +48,14 @@ for (const t of BH.TRACKS) {
     ids.add(e.id);
   }
 }
+// ===== 称号 =====
+const titleIds = new Set();
+for (const t of BH.TITLES || []) {
+  if (titleIds.has(t.id)) errs.push('称号重复: ' + t.id);
+  titleIds.add(t.id);
+  if (!t.name || !t.emoji || typeof t.test !== 'function') errs.push('称号字段不完整: ' + t.id);
+}
+
 // ===== 死法 =====
 const causes = new Set();
 for (const d of BH.DEATHS) {

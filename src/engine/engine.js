@@ -6,6 +6,16 @@ window.BH = window.BH || {};
   const DECADE_AGES = [10, 20, 30, 40, 50, 60];
   const TRAIT_AGES = [6, 14, 24, 32, 45, 58];
   const DIM_KEYS = ['CHR', 'INT', 'STR', 'MNY', 'JOY'];
+  // 五幕节奏表（21-rhythm.md §1）
+  const PACE = [
+    { id: 'prologue', max: 12, compressAfter: 4, golden: 0.5 },
+    { id: 'act1', max: 18, compressAfter: 4, golden: 0.8 },
+    { id: 'act2', max: 35, compressAfter: 3, golden: 1.2 },
+    { id: 'act3', max: 60, compressAfter: 3, golden: 1.0 },
+    { id: 'finale', max: 999, compressAfter: 2, golden: 1.0 },
+  ];
+  function chapterOf(age) { return age <= 12 ? PACE[0] : age <= 18 ? PACE[1] : age <= 35 ? PACE[2] : age <= 60 ? PACE[3] : PACE[4]; }
+  E.chapterOf = chapterOf;
 
   // ---------- 随机 ----------
   function mulberry32(a) {
@@ -34,7 +44,7 @@ window.BH = window.BH || {};
       sex: null, talents: [], traits: [],
       flags: [], tags: {}, tracks: {},
       wlog: [], lines: [], // {age,text,grade,br}
-      seen: {}, plainStreak: 0, queue: [],
+      seen: {}, plainStreak: 0, queue: [], titles: [],
       stats: { gradeSum: 0, legend: 0, rare: 0, epic: 0, branches: 0, crises: 0, golden: 0 },
       decade: {}, bossDone: {}, traitDone: {},
       crisisCd: {}, debtSince: -1, emoStrikes: 0,
@@ -130,7 +140,7 @@ window.BH = window.BH || {};
     for (const tg of (ev.tags || [])) if (S.bias.tag[tg]) x *= S.bias.tag[tg];
     if (ev.tr) { const id = ev.tr.id || ev.tr; x *= (S.bias.track[id] || 1) * (1.5 + (S.tracks[id] || 0) * 0.9); }
     // 反转槽补偿：本十年稀有出勤不足则加权
-    if (g >= 1 && (S.age % 10) >= 7 && S.stats.tenRareMiss >= 6) x *= 2.2;
+    if (g >= 1 && (S.age % 10) >= 5 && S.stats.tenRareMiss >= 5) x *= 3;
     return x;
   }
   function drawEvent(S, cands) {
@@ -253,6 +263,9 @@ window.BH = window.BH || {};
         if (o.tr) S.tracks[o.tr.id] = Math.max(S.tracks[o.tr.id] || 0, o.tr.d || 1);
         const line = { age: S.age, text: '→ ' + o.rt, grade: 1, decade: true, tags: o.tg || [], danmaku: true };
         S.lines.push(line);
+        if (payload.age === 20 && !S.seen['ob0']) S.queue.push('ob0');
+        S.lines.push({ age: S.age, text: '📋 十年小结：颜' + S.dims.CHR + ' 智' + S.dims.INT + ' 体' + S.dims.STR + ' 钱' + S.dims.MNY + ' 乐' + S.dims.JOY + ' · 称号 ' + S.titles.length + ' 个', grade: 0, summary: true, tags: [], danmaku: false });
+        syncQueue(S);
       }
       return { line: S.lines[S.lines.length - 1] };
     }
@@ -326,6 +339,15 @@ window.BH = window.BH || {};
     return band;
   };
 
+  // ---------- 称号：局内里程碑收集（21-rhythm.md §2）----------
+  function nextTitle(S) {
+    for (const t of (BH.TITLES || [])) {
+      if (S.titles.includes(t.id)) continue;
+      try { if (t.test(S)) { S.titles.push(t.id); return { age: S.age, text: '🏅 获得称号：【' + t.name + '】', grade: 1, title: true, tags: [], danmaku: true }; } } catch (e) {}
+    }
+    return null;
+  }
+
   // ---------- 剧本队列：旗标→订阅事件，节拍强制续演（20-arcs.md §1）----------
   let _flagSubs = null;
   function flagSubs() {
@@ -369,7 +391,7 @@ window.BH = window.BH || {};
     }
     // 意外死亡
     let pAcc = 0.008 + (S.debtSince >= 0 && S.age - S.debtSince > 6 ? 0.008 : 0)
-      + (S.flags.includes('ignore_health') ? 0.006 : 0) + (S.age > 72 ? 0.016 : 0);
+      + (S.flags.includes('ignore_health') ? 0.006 : 0) + (S.age > 72 ? 0.016 : 0) + (S.age > 85 ? 0.035 : 0);
     if (S.talents.includes('tieding')) pAcc *= 0.6;
     if (S.R() < pAcc) {
       const pool = (BH.DEATHS || []).filter(x => !x.ok || x.ok(S) !== false);
@@ -415,8 +437,12 @@ window.BH = window.BH || {};
       }
       const r = emit(S, runEvent(S, ev));
       syncQueue(S);
+      const extras = [];
       const cl = tryCompress(S);
-      if (cl) r.extra = cl;
+      if (cl) extras.push(cl);
+      const tl = nextTitle(S);
+      if (tl) extras.push(tl);
+      if (extras.length) r.extra = extras;
       return r;
     }
     // 3. 危机
@@ -447,7 +473,7 @@ window.BH = window.BH || {};
       }
     }
     // 5. 机缘（金闪）
-    let gRate = 0.025;
+    let gRate = 0.03 * chapterOf(S.age).golden;
     if (S.talents.includes('yeli')) gRate *= 1.6;
     if (S.talents.includes('tiangou')) gRate *= 1.8;
     if (S.traits.includes('ouhuang')) gRate *= 1.5;
@@ -471,8 +497,12 @@ window.BH = window.BH || {};
     if (cands.length) {
       const ev = drawEvent(S, cands);
       const r = emit(S, runEvent(S, ev));
+      const extras = [];
       const cl = tryCompress(S);
-      if (cl) r.extra = cl;
+      if (cl) extras.push(cl);
+      const tl = nextTitle(S);
+      if (tl) extras.push(tl);
+      if (extras.length) r.extra = extras;
       return r;
     }
     // 7. 平年
@@ -488,7 +518,7 @@ window.BH = window.BH || {};
 
   // 压缩：连续 3+ 平淡年（含 grade0 事件）→ 快进到检查点前
   function tryCompress(S) {
-    if ((S.plainStreak || 0) < 3) return null;
+    if ((S.plainStreak || 0) < chapterOf(S.age).compressAfter) return null;
     const cps = [...DECADE_AGES, ...BOSS_AGES, ...TRAIT_AGES, S.lif - 1];
     for (const qid of S.queue) { const qe = (BH.EVENTS || []).find(x => x.id === qid); if (qe) cps.push(qe.a[1] + 1); }
     const cpFiltered = cps.filter(a => a > S.age);
@@ -565,7 +595,20 @@ window.BH = window.BH || {};
     if (S.deathCause && S.deathCause.cause === '长眠') { irony = 1.2; ironyWhy = 'emo线收束'; }
     S.ironyWhy = ironyWhy;
 
+    // 执念判定（21-rhythm.md §2）
+    var obLine = '';
+    var obScore = 0;
+    var obFlag = S.flags.find(f => f.startsWith('obsession_') && f !== 'obsession_letgo');
+    if (obFlag) {
+      const key = obFlag.slice(10);
+      const OB_NAMES = { love: '被爱着过', chaos: '活得尽兴', fame: '留下痕迹', rich: '富过' };
+      if (S.flags.includes('obsession_letgo')) { obLine = '执念：放下亦是圆满'; obScore = 0.3; }
+      else if ((S.tags[key] || 0) >= 3) { obLine = '执念得偿（' + OB_NAMES[key] + '）'; obScore = 0.6; }
+      else { obLine = '执念未了（' + OB_NAMES[key] + '）'; }
+    }
+
     let score = 4.0 + Math.min(S.stats.legend, 3) * 0.55 + S.stats.rare * 0.04 + S.stats.branches * 0.05 + maxDepth * 0.2 + irony;
+    score += obScore + Math.min(S.titles.length, 5) * 0.08;
     const totalLines = S.lines.length || 1;
     const plainRatio = S.lines.filter(l => l.grade === 0 && !l.compress).length / totalLines;
     if (plainRatio > 0.75) score -= 1.6;
@@ -593,7 +636,7 @@ window.BH = window.BH || {};
     return {
       box, score: Math.round(score * 10) / 10, amp: Math.round(AMP * 100) / 100, deep: Math.round(DEEP * 100) / 100,
       base: Math.round(base * 10) / 10,
-      irony, ironyWhy, title, quote,
+      irony, ironyWhy, title, quote, obsession: obLine, titles: S.titles.slice(),
       type: title.type, tracks: S.tracks, maxDepth, endings,
       reinc: Math.max(1, Math.round(box / 10)) + (S.stats.legend ? S.stats.legend * 3 : 0),
     };

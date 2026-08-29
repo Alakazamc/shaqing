@@ -215,7 +215,7 @@
     if (!r) return;
     renderHUD();
     addLine(r.line);
-    if (r.extra) addLine(r.extra);
+    if (r.extra) [].concat(r.extra).forEach(addLine);
     if (r.ask) { stopAuto(); pendingAsk = r.ask; setTimeout(() => showAsk(r.ask), 420); return; }
     if (r.end) { busy = true; setTimeout(settlement, 1400); }
   }
@@ -268,6 +268,7 @@
       const r = BH.choose(S, ask.kind, id, ask);
       closeAsk();
       if (r && r.line) addLine(r.line);
+      if (r && r.extra) [].concat(r.extra).forEach(addLine);
       pendingAsk = null;
       renderHUD();
       if (S.phase === 'end') { busy = true; setTimeout(settlement, 1400); }
