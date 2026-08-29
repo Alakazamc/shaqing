@@ -18,7 +18,13 @@
   // ---------- 全局状态 ----------
   let S = null, pool = [], sel = [], deltas = null, pendingAsk = null, autoTimer = null, holdTimer = null, busy = false, challenge = false;
 
-  function show(id) { $$('.screen').forEach(s => s.classList.add('hidden')); $(id).classList.remove('hidden'); }
+  function show(id) {
+    $$('.screen').forEach(s => { s.classList.add('hidden'); s.classList.remove('entering'); });
+    const el = $(id);
+    el.classList.remove('hidden');
+    el.classList.add('entering');
+    setTimeout(() => el.classList.remove('entering'), 320);
+  }
   function esc(s) { const d = document.createElement('div'); d.textContent = s; return d.innerHTML; }
 
   // ---------- 片名页 ----------
@@ -155,18 +161,27 @@
   // ---------- 拍摄中 ----------
   function startLife() {
     show('#screen-life');
+    lastDims = null;
     $('#stream').innerHTML = '';
     renderHUD();
     addLine({ age: 0, text: '🎥 开机。你的人生开拍了。', grade: -1, tags: [], danmaku: false });
   }
+  let lastDims = null;
   function renderHUD() {
     $('#hud-age').textContent = S.age + ' 岁';
     $('#hud-dims').innerHTML = Object.keys(DIM_NAMES).map(k => {
       let cls = '';
       if ((k === 'STR' && S.dims.STR <= 2) || (k === 'JOY' && S.dims.JOY <= 1) || (k === 'MNY' && S.dims.MNY <= -2)) cls = 'warn';
       else if ((k === 'CHR' && S.dims.CHR >= 9) || (k === 'INT' && S.dims.INT >= 9) || (k === 'MNY' && S.dims.MNY >= 10)) cls = 'good';
-      return `<span class="dim-pill ${cls}">${DIM_NAMES[k][0]} ${S.dims[k]}</span>`;
+      let dd = '';
+      if (lastDims && lastDims[k] !== undefined && S.dims[k] !== lastDims[k]) {
+        const d = S.dims[k] - lastDims[k];
+        cls += ' bump';
+        dd = `<span class="dd ${d > 0 ? 'up' : 'down'}">${d > 0 ? '+' : ''}${d}</span>`;
+      }
+      return `<span class="dim-pill ${cls}">${DIM_NAMES[k][0]} ${S.dims[k]}${dd}</span>`;
     }).join('');
+    lastDims = { ...S.dims };
   }
   function addLine(line) {
     const cls = line.death ? 'death' : line.grade === -1 ? 'gm1' : line.grade === -2 ? 'gm1' : 'g' + line.grade;
@@ -184,6 +199,8 @@
       el.textContent = prefix + line.text;
       $('#stream').appendChild(el);
     }
+    const st = $('#stream');
+    while (st.children.length > 80) st.removeChild(st.firstChild);
     $('#stream-wrap').scrollTop = $('#stream-wrap').scrollHeight;
     if (line.grade === 1) BH.SFX.rare(); else if (line.grade === 2) BH.SFX.epic(); else if (line.grade === 3) BH.SFX.golden(); else if (line.crisis || line.boss) BH.SFX.warn();
     if (meta.danmu && line.danmaku) spawnDanmaku(line);
@@ -315,8 +332,20 @@
       $('#qte-bar').style.width = Math.max(0, p * 100) + '%';
       if (p <= 0) { clearInterval(barTimer); finishQTE(clicks, B, ask); }
     }, 60);
-    $('#qte-btn').onclick = () => {
-      clicks++; $('#qte-count').textContent = clicks; BH.SFX.flip();
+    $('#qte-btn').onclick = (e) => {
+      clicks++;
+      const cc = $('#qte-count');
+      cc.textContent = clicks;
+      cc.classList.remove('bump'); void cc.offsetWidth; cc.classList.add('bump');
+      const fl = document.createElement('span');
+      fl.className = 'qte-float'; fl.textContent = '+1';
+      fl.style.left = (34 + Math.random() * 32) + '%';
+      fl.style.top = (48 + Math.random() * 18) + '%';
+      $('#qte').appendChild(fl);
+      setTimeout(() => fl.remove(), 700);
+      const btn = e.currentTarget;
+      btn.classList.remove('hit'); void btn.offsetWidth; btn.classList.add('hit');
+      BH.SFX.flip();
       if (clicks % 10 === 0) BH.SFX.drum();
     };
     function finishQTE(c) {
@@ -354,11 +383,12 @@
           $('#boss-fill').style.width = Math.min(100, (score / Math.max(line * 1.6, 1)) * 100) + '%';
           const o = B.opts.find(x => x.id === band);
           const diff = line - score;
-          setTimeout(() => {
-            $('#boss-result').innerHTML = band === B.opts[0].id
-              ? `<div class="big">${score >= line + 8 ? '漂亮！' : '过了！'}</div>${esc(o.rt)}`
-              : (diff > -4 ? `<div class="big" style="color:#ff9d6e">就差一点！！</div>${esc(o.rt)}` : `<div class="big" style="color:#b9b9c6">${B.opts.find(x=>x.id===band).id === 'luo' || band === 'none' || band === 'hard' || band === 'down' || band === 'no' ? '没能过线' : '未达标'}</div>${esc(o.rt)}`);
-            BH.SFX[band === B.opts[0].id ? 'win' : 'lose']();
+          const brEl = $('#boss-result');
+          brEl.classList.remove('slam'); void brEl.offsetWidth;
+          $('#boss-result').innerHTML = band === B.opts[0].id
+            ? `<div class="big">${score >= line + 8 ? '漂亮！' : '过了！'}</div>${esc(o.rt)}`
+            : (diff > -4 ? `<div class="big" style="color:#ff9d6e">就差一点！！</div>${esc(o.rt)}` : `<div class="big" style="color:#b9b9c6">${B.opts.find(x=>x.id===band).id === 'luo' || band === 'none' || band === 'hard' || band === 'down' || band === 'no' ? '没能过线' : '未达标'}</div>${esc(o.rt)}`);
+          brEl.classList.add('slam');
             $('#boss-ok').classList.remove('hidden');
             $('#boss-ok').onclick = () => {
               $('#boss').classList.add('hidden');
@@ -366,7 +396,6 @@
               if (r.line) addLine(r.line);
               renderHUD();
             };
-          }, 550);
         }, 350);
       }
     };
@@ -403,6 +432,8 @@
       b.style.borderColor = '#e8443a';
     });
     show('#screen-poster');
+    const pc = document.querySelector('#poster-canvas');
+    pc.classList.remove('show'); void pc.offsetWidth; pc.classList.add('show');
     appCtx.lastLines = S.lines;
     if (report.score >= 8.5 || report.box >= 50) BH.SFX.win();
     // 挑战对比
