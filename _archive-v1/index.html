@@ -1,0 +1,563 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>badhand · 人生放送中</title>
+<link rel="stylesheet" href="src/ui/styles.css">
+<!-- 像素风皮肤：覆盖基础样式，零图片资产（15-signal-fx.md / C8） -->
+<link rel="stylesheet" href="src/ui/pixel.css">
+</head>
+<body>
+<div id="app">
+
+  <!-- ══ BOOT ══════════════════════════════════════ -->
+  <div v-if="phase==='BOOT'" class="panel center boot-panel">
+    <div class="brand-kicker">LIFE / PLAYBACK</div>
+    <div class="brand-mark"><span class="brand-star">✦</span> badhand</div>
+    <div class="brand-subtitle">人生放送中</div>
+    <div class="brand-note">每一次选择，都会留下回声</div>
+    <div class="brand-rule" aria-hidden="true"><i></i><i></i><i></i></div>
+    <label class="seed-label" for="seed-input">本局编号</label>
+    <input id="seed-input" class="seed-input" v-model="seedInput" maxlength="12" placeholder="留空随机">
+    <button class="primary" @click="startOrigin">开始这一局</button>
+    <button class="archive-open boot-archive" @click="openArchive('track')">
+      <span>打开图鉴</span><span>{{ foundTrackCount }}/{{ trackTotal }} 轨道已发现</span>
+    </button>
+    <div class="boot-foot">
+      已玩 {{ save.stats.runs }} 局 · 素材 {{ save.material }}
+      <span v-if="save.stats.best">· 最高 {{ save.stats.best }} 分</span>
+    </div>
+    <div class="seedline" v-if="save.stats.recentSeeds&&save.stats.recentSeeds.length">
+      最近 seed：{{ save.stats.recentSeeds.slice(0,4).join(' · ') }}
+    </div>
+    <div v-if="scoreGuideVisible" class="score-guide">
+      <div class="score-guide-title">这一局的分数拿来做什么？</div>
+      <div class="score-guide-row"><b>📺 年度收视</b><span>推进本季续订线：达标续订，2× 加更，未达标会注水但不会截断。</span></div>
+      <div class="score-guide-row"><b>🎬 终局评分</b><span>总收视 × 振幅 × 贯彻 × 反讽，变成一张豆瓣式评分卡。</span></div>
+      <div class="score-guide-row"><b>🎴 下一局</b><span>评分影响抽卡档位，路线和 NPC 影响主题池；抽到的内容会进入后续局的可能性。</span></div>
+      <button class="guide-dismiss" @click="dismissScoreGuide">知道了</button>
+    </div>
+    <div v-if="!hasStorage()" class="storage-note">
+      本局进度不会保存
+    </div>
+  </div>
+
+  <!-- ══ ORIGIN ════════════════════════════════════ -->
+  <div v-else-if="phase==='ORIGIN'" class="panel">
+    <div class="dim center" style="font-size:13px;margin-bottom:14px">你带着这些出生</div>
+    <div class="origin-grid">
+      <div v-for="(grp,key) in {family:'家庭',sex:'性别',personality:'性格'}" :key="key">
+        <div class="dim" style="font-size:12px;margin-top:6px">{{ grp }}</div>
+        <div class="origin-item" v-for="o in origins[key]" :key="o.id"
+             v-show="pick[key]===o.id">
+          <span class="em">{{ o.emoji }}</span>
+          <span>
+            <span class="nm">{{ o.name }}</span>
+            <span class="ds" v-if="o.desc"><br>{{ o.desc }}</span>
+          </span>
+        </div>
+      </div>
+    </div>
+    <div style="display:grid;gap:8px;margin-top:16px">
+      <button @click="rollOrigin">重抽</button>
+      <button class="primary" @click="confirmOrigin">就这样</button>
+    </div>
+  </div>
+
+  <!-- ══ TALENT ════════════════════════════════════ -->
+  <div v-else-if="phase==='TALENT'" class="panel">
+    <div class="dim center" style="font-size:13px;margin-bottom:14px">选一个天赋</div>
+    <div class="options">
+      <button v-for="t in talentChoices" :key="t.id" @click="confirmTalent(t.id)">
+        <div class="opt-row">
+          <span class="opt-text">{{ t.emoji }} <b>{{ t.name }}</b></span>
+          <span class="opt-gain" v-if="isUnlocked('talent', t.id)">ARCHIVE</span>
+        </div>
+        <span class="ds dim" style="font-size:13px">{{ t.desc }}</span>
+      </button>
+    </div>
+  </div>
+
+  <!-- ══ 游戏中：YEAR / SCENE / REWARD ═══════════════ -->
+  <div v-else-if="phase==='YEAR'||phase==='SCENE'||phase==='REWARD'" :class="[fxClass, feedbackClass]">
+    <div class="fx-pixels" v-if="shatter" aria-hidden="true">
+      <i v-for="n in 12" :key="'fx'+n" :style="shatterStyle(n)"></i>
+    </div>
+    <div class="feedback-toast" v-if="feedbackText" :key="'feedback-'+feedbackKey" aria-live="polite">
+      <span class="feedback-mark">◆</span>
+      <strong>{{ feedbackText }}</strong>
+      <small v-if="feedbackDetail">{{ feedbackDetail }}</small>
+    </div>
+
+    <!-- 顶栏：续订线目标必须始终可见（19-tension.md §1.1）-->
+    <div class="hud">
+      <div class="hud-top">
+        <span class="season-tag">{{ seasonName }}</span>
+        <!-- 职业是连贯性的载体，必须一直可见（17-jobs.md §0）-->
+        <span class="jobtag" v-if="jobInfo">
+          {{ jobInfo.emoji }} {{ jobInfo.name }}
+          <i v-if="jobInfo.years">· {{ jobInfo.years }}年</i>
+        </span>
+        <span class="jobtag none" v-else>无业</span>
+        <span class="aud">👀 {{ state.AUD }}</span>
+      </div>
+      <div v-if="seasonProgress&&seasonProgress.target" class="bar-wrap">
+        <div class="bar">
+          <i :style="{width:(seasonProgress.ratio*100)+'%'}"
+             :class="{met:seasonProgress.met}"></i>
+        </div>
+        <div class="bar-label">
+          <span class="mono">{{ fmt(seasonProgress.sum) }}</span>
+          <span class="dim"> / {{ fmt(seasonProgress.target) }}</span>
+          <span v-if="seasonProgress.met" class="over">
+            已达标 {{ seasonProgress.over.toFixed(1) }}×
+          </span>
+          <span v-else class="dim">
+            差 {{ fmt(seasonProgress.target - seasonProgress.sum) }}
+          </span>
+        </div>
+      </div>
+      <div v-else class="bar-label dim">本季不设续订线</div>
+      <div class="score-chain">
+        <span>年度收视 → 本季累计 {{ fmt(state.seasonSum) }}</span>
+        <span v-if="seasonProgress&&seasonProgress.target">→ 续订线 {{ fmt(seasonProgress.target) }}</span>
+        <span>→ 终局评分</span>
+      </div>
+      <div class="hud-readout" v-if="yearReadout">
+        <div class="hud-year">
+          <span class="hud-eyebrow">YEAR</span>
+          <strong>{{ yearReadout.age }}</strong><span>岁</span>
+        </div>
+        <div class="hud-readout-meta">
+          <span class="phase-chip">{{ yearReadout.phase }}</span>
+          <span>HOOK {{ yearReadout.hook }}</span>
+          <span class="dim">峰值 {{ yearReadout.hookPeak }}</span>
+        </div>
+      </div>
+      <div class="route-status" v-if="routeStatus">
+        <span>ROUTE {{ routeStatus.slot }}/3</span>
+        <span>已选 {{ routeStatus.picked }} 张</span>
+        <span>累计风险 {{ routeStatus.risk }}</span>
+      </div>
+      <div class="hud-action-hint" v-if="actionHint">{{ actionHint }}</div>
+      <div class="deck-hud" v-if="deckCards.length">
+        <span class="deck-title">DECK {{ deckCards.length }}/3</span>
+        <span class="deck-card-mini" v-for="(c,i) in deckCards" :key="'d'+i">
+          {{ c.label }}<i v-if="c.suite"> · {{ c.suite }}</i>
+        </span>
+      </div>
+      <div class="relation-hud" v-if="npcRelations.length">
+        <span class="relation-title">RELATION</span>
+        <span class="relation-chip" v-for="n in npcRelations" :key="n.id">
+          {{ n.emoji }} {{ n.name }} · {{ n.band }} · {{ n.axis > 0 ? '+' : '' }}{{ n.axis }}
+        </span>
+      </div>
+    </div>
+
+    <!-- 长日志：逐条向下累积，可往上翻 -->
+    <div class="logbox" ref="logbox">
+      <div class="log-head">
+        <span>LIFE FEED // 事件日志</span>
+        <span>{{ log.length }} 条记录</span>
+      </div>
+      <div v-for="(l,i) in log" :key="i" class="log-item" :class="'li-'+l.kind">
+        <template v-if="l.kind==='skip'">
+          <div class="li-skip">{{ l.text }}</div>
+        </template>
+
+        <template v-else-if="l.kind==='event'||l.kind==='beat'">
+          <div class="li-head" v-if="l.kind!=='event'||l.showAge!==false">
+            <span class="li-age" v-if="l.kind==='event'">{{ l.age }} 岁</span>
+            <span class="li-age beat" v-else>
+              场景 {{ l.beat ? l.beat.i+1 : 1 }}/{{ l.beat ? l.beat.of : 1 }}
+            </span>
+          </div>
+          <div class="li-text" :class="l.fx">{{ l.text }}</div>
+        </template>
+
+        <template v-else-if="l.kind==='choice'">
+          <div class="li-choice">▸ {{ l.text }}</div>
+        </template>
+
+        <template v-else-if="l.kind==='score'">
+          <div class="li-score">
+            <span v-for="(c,j) in l.score.chips" :key="'c'+j" class="chip">
+              {{ c.label }} +{{ n1(c.value) }}
+            </span>
+            <span v-for="(m,j) in l.score.mults" :key="'m'+j" class="mult">
+              {{ m.label }} {{ m.kind==='mul' ? '×'+n2(m.mult) : '+'+n2(m.mult) }}
+            </span>
+            <span class="score-formula" v-if="l.score.B!=null">
+              {{ scoreFormula(l.score) }}
+            </span>
+            <span class="score-use-tag">本次收视</span>
+            <b class="mono">{{ l.score.total }}</b>
+          </div>
+        </template>
+
+        <template v-else-if="l.kind==='season'">
+          <div class="li-season">{{ l.text }}</div>
+        </template>
+        <template v-else-if="l.kind==='relation'">
+          <div class="li-relation">↔ {{ l.text }}</div>
+        </template>
+        <template v-else-if="l.kind==='reward'">
+          <div class="li-reward">{{ l.text }}</div>
+        </template>
+        <template v-else-if="l.kind==='loop'">
+          <div class="li-loop">🔁 {{ l.text }}</div>
+        </template>
+      </div>
+    </div>
+
+    <!-- 当前交互区，固定在日志下方 -->
+    <div ref="actionbox" class="panel actionbox">
+      <div class="action-kicker" v-if="phase==='SCENE'">SCENE / 下一拍</div>
+      <div class="action-kicker" v-else-if="phase==='REWARD'">SEASON REWARD / 季末奖励</div>
+      <div class="action-kicker" v-else>YEAR / 这一年怎么过</div>
+      <div class="scene-dots" v-if="phase==='SCENE'&&result&&result.sceneBeat">
+        <i v-for="n in result.sceneBeat.of" :key="n"
+           :class="{on: n<=result.sceneBeat.i}"></i>
+      </div>
+      <div class="scene-acc" v-if="phase==='SCENE'&&result&&result.sceneTotal">
+        累计桥段 {{ result.sceneTotal }}
+      </div>
+
+      <!-- 季末三选一（19-tension.md §1.2）-->
+      <template v-if="phase==='REWARD'&&seasonReward">
+        <div class="dim center" style="font-size:13px;margin-bottom:4px">
+          本季超额 {{ seasonReward.over.toFixed(1) }}×
+          · 奖励档位 <b :class="'r-'+seasonReward.tier">{{ rarityCn(seasonReward.tier) }}</b>
+        </div>
+        <div class="score-reward-hint">这次超额会换成下一季的构筑资源；奖励不是直接加最终评分。</div>
+        <div class="options">
+          <button v-for="(o,i) in seasonReward.options" :key="i"
+                  :class="'r-'+o.rarity" @click="takeReward(i)">
+            <div class="opt-row">
+              <span class="opt-text">{{ o.label }}</span>
+              <span class="rtag" :class="'r-'+o.rarity">{{ rarityCn(o.rarity) }}</span>
+            </div>
+            <span class="ds dim" v-if="o.desc">{{ o.desc }}</span>
+          </button>
+        </div>
+      </template>
+
+      <!-- 季内路线：直接替代原来揭示随机事件的空继续（22-planning.md）-->
+      <template v-else-if="planOffers.length">
+        <div class="route-hint dim">先选一张节目牌，节点会改变候选池与协同</div>
+        <div class="options route-options">
+          <button v-for="(o,i) in planOffers" :key="o.id"
+                  :class="'plan-card risk-'+o.risk" @click="choosePlan(i)">
+            <div class="opt-row">
+              <span class="opt-text">{{ o.label }}</span>
+              <span class="route-risk">{{ riskCn(o.risk) }}</span>
+              <span class="opt-gain" v-if="o.archive">ARCHIVE</span>
+            </div>
+            <div class="route-line" v-if="o.archive">
+              已解锁档案 · {{ nameOf(o.metaUnlock.type==='track'?'tracks':'npcs', o.metaUnlock.id) }}
+            </div>
+            <div class="route-line">
+              收视：{{ audienceCn(o.audience) }} · 可能播出：{{ o.possible }}
+            </div>
+            <div class="route-line dim">代价：{{ o.cost.join(' · ') }}</div>
+            <div class="route-match" v-if="o.matchedCast.length">
+              合拍人设：{{ matchedCastText(o) }}
+            </div>
+            <div class="route-match dim" v-else>暂无匹配人设 · 仍保留基础牌效</div>
+          </button>
+        </div>
+      </template>
+
+      <!-- 事件选项 -->
+      <div class="options" v-else-if="result&&result.options.length">
+        <button v-for="(o,i) in result.options" :key="i" @click="choose(i)">
+          <div class="opt-row">
+            <span class="opt-text">{{ o.text }}</span>
+            <span class="opt-gain" v-if="o.drama">+{{ o.drama }}</span>
+          </div>
+          <!-- 收手必须显示放弃掉的具体分数（08-true-ending.md §4）-->
+          <span class="opt-giveup" v-if="o.restraint&&o.givenUp>0">
+            放弃 {{ o.givenUp }}
+          </span>
+        </button>
+      </div>
+
+      <button class="primary" v-else @click="cont">
+        {{ state.age }} 岁 · 继续
+      </button>
+    </div>
+
+    <div class="panel ui-shelf">
+      <div class="shelf-head">
+        <span>DECK // 当前节目单</span>
+        <b>{{ deckCards.length }}/3</b>
+      </div>
+      <div class="shelf-cards" v-if="deckCards.length">
+        <div class="shelf-card" v-for="(c,i) in deckCards" :key="'shelf'+i">
+          <span class="shelf-card-index">0{{ i+1 }}</span>
+          <span>{{ c.label }}</span>
+          <i v-if="c.suite">{{ c.suite }}</i>
+        </div>
+      </div>
+      <div class="shelf-empty" v-else>本季还没有节目牌；先在交互区选择路线。</div>
+      <div class="state-readout" v-if="routeStatus">
+        <span>节点 {{ routeStatus.picked }}/3</span>
+        <span>风险 {{ routeStatus.risk }}</span>
+        <span class="state-readout-hint">{{ actionHint }}</span>
+      </div>
+      <button class="archive-open" @click="openArchive('track')">
+        查看完整图鉴 <span>{{ foundEventCount }} 条事件已记录</span>
+      </button>
+    </div>
+
+    <div class="panel" style="margin-top:10px;padding:12px 14px">
+      <div class="stats">
+        <span>颜 <b :class="{hi:state.CHR>10}">{{ state.CHR }}</b></span>
+        <span>智 <b :class="{hi:state.INT>10}">{{ state.INT }}</b></span>
+        <span>体 <b :class="{hi:state.STR>10}">{{ state.STR }}</b></span>
+        <span>钱 <b :class="{hi:state.MNY>10}">{{ state.MNY }}</b></span>
+        <span>心 <b :class="{hi:state.SPR>10}">{{ state.SPR }}</b></span>
+      </div>
+      <div class="cards" style="margin-top:10px" v-if="castCards.length||scarCards.length">
+        <b v-for="(c,i) in castCards" :key="'k'+i">{{ c.emoji }}{{ c.name }}<span
+          v-if="c.lv>1" class="dim"> lv{{ c.lv }}</span></b>
+        <b class="scar" v-for="(c,i) in scarCards" :key="'s'+i">{{ c.emoji }}{{ c.name }}</b>
+      </div>
+    </div>
+  </div>
+
+  <!-- ══ SEASON_END / REVIVE ═══════════════════════ -->
+  <div v-else-if="phase==='SEASON_END'||phase==='REVIVE'" class="panel phase-panel" :class="feedbackClass">
+    <div class="phase-feedback" v-if="feedbackText">
+      <b>{{ feedbackText }}</b><span v-if="feedbackDetail">{{ feedbackDetail }}</span>
+    </div>
+    <template v-if="result&&result.seasonEnd">
+      <div class="dim center" style="font-size:13px">
+        S{{ result.seasonEnd.season }} {{ result.seasonEnd.name }} · 结算
+      </div>
+      <div class="center" style="margin:16px 0">
+        <div class="mono" style="font-size:34px;font-weight:700;color:var(--accent)">
+          {{ fmt(result.seasonEnd.sum) }}
+        </div>
+        <div class="dim" style="font-size:13px">
+          <span v-if="result.seasonEnd.threshold">
+            续订线 {{ fmt(result.seasonEnd.threshold) }}
+          </span>
+          <span v-else>本季不设续订线</span>
+        </div>
+      </div>
+      <div class="center" style="font-size:19px;font-weight:700;margin-bottom:10px">
+        <span v-if="result.seasonEnd.verdict==='extend'" style="color:var(--good)">加更</span>
+        <span v-else-if="result.seasonEnd.verdict==='renew'">续订</span>
+        <span v-else style="color:var(--hot)">腰斩</span>
+      </div>
+      <div class="season-outcome" v-if="result&&result.seasonEnd">
+        {{ seasonOutcome(result.seasonEnd, result) }}
+      </div>
+    </template>
+    <div class="event-text center" v-if="result&&result.text">{{ result.text }}</div>
+    <button class="primary" @click="cont">继续</button>
+  </div>
+
+  <!-- ══ SETTLEMENT：豆瓣式条目页 ═══════════════════ -->
+  <div v-else-if="phase==='SETTLEMENT'" class="panel settlement-panel" :class="feedbackClass">
+    <div class="settlement-feedback" v-if="feedbackText">
+      <b>{{ feedbackText }}</b><span v-if="feedbackDetail">{{ feedbackDetail }}</span>
+    </div>
+    <div class="title-card">
+      <div class="title-kicker">LIFE ARCHIVE // FINAL CUT</div>
+      <div class="show-title">{{ finalData.trueEnding ? '《（无题）》' : showTitle }}</div>
+      <div class="show-meta">
+        {{ 2026 - state.age }}–2026 · {{ state.age }} 岁<span
+          v-if="!finalData.trueEnding"> · 荒诞/励志</span>
+      </div>
+      <div class="rating-label">观众评分</div>
+      <div class="rating" :class="{none: finalData.rating===null}">
+        {{ finalData.rating===null ? '—' : finalData.rating.toFixed(1) }}
+      </div>
+      <div v-if="finalData.rating===null" class="dim" style="font-size:13px">暂无评分</div>
+      <div v-else>
+        <div class="stars">{{ starText }}</div>
+        <div class="votes">{{ votes(state) }} 人评价</div>
+      </div>
+    </div>
+
+    <div class="tags">
+      <template v-if="finalData.trueEnding"><b class="dim">（无）</b></template>
+      <template v-else>
+        <b v-for="(t,i) in state.TAG.slice(0,5)" :key="i">{{ t }}</b>
+      </template>
+    </div>
+
+    <div class="sect">
+      <h4>剧情简介</h4>
+      <div v-if="finalData.trueEnding" class="dim">已下架</div>
+      <div v-else>
+        <div v-if="finalData.deathText">{{ finalData.deathText }}</div>
+      </div>
+    </div>
+
+    <div class="sect" v-if="!finalData.trueEnding">
+      <h4>高光时间线</h4>
+      <div class="tl-row" v-for="(t,i) in finalData.timeline" :key="i">
+        <span>{{ t.age }} 岁</span><span class="n mono">{{ fmt(t.total) }}</span>
+      </div>
+      <div class="dim" v-if="!finalData.timeline.length">（无高光）</div>
+    </div>
+
+    <!-- 真结局：污点牌一张不少地照常显示。你没被洗白，你只是不演了 -->
+    <div class="sect">
+      <h4>人设</h4>
+      <div class="cards">
+        <b v-for="(c,i) in castCards" :key="'k'+i">{{ c.emoji }}{{ c.name }}<span
+          v-if="c.lv>1" class="dim"> lv{{ c.lv }}</span></b>
+        <b class="scar" v-for="(c,i) in scarCards" :key="'s'+i">{{ c.emoji }}{{ c.name }}</b>
+      </div>
+    </div>
+
+    <div class="sect" v-if="!finalData.trueEnding">
+      <div class="mults">
+        <span>总收视 <b class="mono">{{ fmt(finalData.total) }}</b></span>
+        <span>振幅 ×{{ finalData.amp.toFixed(2) }}</span>
+        <span>贯彻 ×{{ finalData.com.toFixed(2) }}</span>
+        <span>反讽 ×{{ finalData.iro.toFixed(2) }}</span>
+      </div>
+    </div>
+
+    <div class="sect score-purpose">
+      <h4>这串分数接下来做什么</h4>
+      <div>本季收视 → 续订 / 加更 / 腰斩；总收视 × 三乘数 → 观众评分。</div>
+      <div v-if="finalData.trueEnding">本局退出评分框架，但仍留下素材，下一局可以换一条路线。</div>
+      <div v-else>
+        评分会影响下一次抽卡的高档权重；本局素材 <b>+{{ runMaterialGain }}</b>，用于把新内容带进后续局。
+        <span class="material-breakdown" v-if="runMaterialBreakdown">
+          （收视换算 {{ runMaterialBreakdown.base }}<span v-if="runMaterialBreakdown.firstTrackBonus"> · 首次轨道 +{{ runMaterialBreakdown.firstTrackBonus }}</span><span v-if="runMaterialBreakdown.firstEndingBonus"> · 新结局 +{{ runMaterialBreakdown.firstEndingBonus }}</span><span v-if="runMaterialBreakdown.cancelBonus"> · 腰斩 +{{ runMaterialBreakdown.cancelBonus }}</span>）
+        </span>
+      </div>
+    </div>
+
+    <div class="sect">
+      <h4>短评</h4>
+      <div class="review" v-if="finalData.trueEnding"><span class="dim">（无人评价）</span></div>
+      <div class="review" v-else>「{{ reviewText }}」<i> — 观众</i></div>
+    </div>
+
+    <div class="sect">
+      <h4>结局</h4>
+      <div class="event-text" style="min-height:0">{{ finalData.endingText }}</div>
+    </div>
+
+    <div class="settlement-ledger sect">
+      <div class="ledger-head"><span>本局记录 // RUN LOG</span><span>{{ state.seed || seedInput }}</span></div>
+      <div class="ledger-grid">
+        <span>播出事件 <b>{{ state.EVT.length }}</b></span>
+        <span>走过轨道 <b>{{ Object.keys(state.TRACK || {}).length }}</b></span>
+        <span>节目节点 <b>{{ state.PLANLOG ? state.PLANLOG.length : 0 }}</b></span>
+        <span>总收视 <b>{{ fmt(finalData.total) }}</b></span>
+      </div>
+    </div>
+
+    <div class="seedline">seed {{ state.seed || seedInput }} · 你也来一局</div>
+    <div class="seedline">发现：事件 {{ foundEventCount }}/{{ eventTotal }} · 事件线 {{ foundLineCount }}/{{ lineTotal }} · 节目牌 {{ foundPlanCount }}/{{ planTotal }}</div>
+    <div style="display:grid;gap:8px;margin-top:14px">
+      <button class="primary" @click="toGacha">查看这条命留下的抽卡</button>
+      <button class="archive-open" @click="openArchive('ending')">打开完整图鉴 <span>结局 / 轨道 / 人设 / 事件</span></button>
+    </div>
+  </div>
+
+  <!-- ══ GACHA ═════════════════════════════════════ -->
+  <div v-else-if="phase==='GACHA'" class="panel">
+    <div class="dim center" style="font-size:13px;margin-bottom:14px">这条命留下的</div>
+    <div class="gacha-purpose">
+      <div>评分 <b>{{ state.final.rating===null ? '—' : state.final.rating.toFixed(1) }}</b> → 高档抽卡权重</div>
+      <div>本局路线与 NPC → 主题池倾斜；抽到的内容进入后续局的可能性</div>
+      <div>已解锁天赋会在开局档案位出现；已解锁轨道/NPC 会开放 archive 节目牌，不直接加倍率</div>
+      <div>本局素材 <b>+{{ runMaterialGain }}</b> · 重复抽卡转素材；新抽卡内容记入解锁池</div>
+    </div>
+    <div class="gacha-card" :class="{'tier-3': gachaResult&&gachaResult.tier===3}"
+         v-if="gachaResult">
+      <div class="em">{{ gachaResult.emoji }}</div>
+      <div class="nm">{{ gachaResult.label }}</div>
+      <div class="dim" style="font-size:13px" v-if="gachaResult.dup">
+        已有 · 转为素材 +{{ gachaResult.gained }}
+      </div>
+      <div class="dim" style="font-size:13px" v-else>
+        {{ gachaResult.typeName }} 已进池
+      </div>
+    </div>
+    <div class="dim center meta-count" style="font-size:12px;margin-top:12px">
+      素材 {{ save.material }} · 已解锁 {{ unlockedCount }} 项 · 轨道发现 {{ foundTrackCount }}/{{ trackTotal }}
+      · 事件 {{ foundEventCount }}/{{ eventTotal }} · 节目牌 {{ foundPlanCount }}/{{ planTotal }}
+    </div>
+    <div style="display:grid;gap:8px;margin-top:14px">
+      <button class="primary" @click="restart">再来一局</button>
+      <button class="archive-open" @click="openArchive('cast')">打开完整图鉴 <span>查看局外发现</span></button>
+    </div>
+  </div>
+
+  <!-- ══ ARCHIVE：发现图鉴（只读，不改写局内状态） ═════════ -->
+  <div v-else-if="phase==='ARCHIVE'" class="panel archive-page">
+    <div class="archive-head">
+      <div>
+        <div class="archive-kicker">ARCHIVE // LIFE INDEX</div>
+        <div class="archive-title">发现图鉴</div>
+      </div>
+      <button class="archive-close" @click="closeArchive">← {{ archiveReturnLabel() }}</button>
+    </div>
+    <div class="archive-summary">
+      <span>已发现 {{ foundTrackCount + foundEndingCount + foundEventCount + foundLineCount + foundPlanCount + foundCastCount + foundNpcCount }} 项</span>
+      <span class="dim">未知内容只保留占位，不提前泄露</span>
+    </div>
+    <div class="archive-tabs" role="tablist">
+      <button v-for="tab in archiveTabs" :key="tab.key" class="archive-tab"
+              :class="{active: archiveTab===tab.key}" @click="selectArchiveTab(tab.key)">
+        <span>{{ tab.label }}</span><b>{{ tab.count }}/{{ tab.total }}</b>
+      </button>
+    </div>
+    <div class="archive-note" v-if="archiveEventNote">{{ archiveEventNote }}</div>
+    <div class="archive-list" v-if="archiveEntries.length">
+      <div class="archive-entry" v-for="entry in archiveEntries" :key="entry.id"
+           :class="{unknown: !entry.known}">
+        <div class="archive-entry-icon">{{ entry.emoji }}</div>
+        <div class="archive-entry-copy">
+          <div class="archive-entry-top">
+            <b>{{ entry.name }}</b><span>{{ entry.meta }}</span>
+          </div>
+          <div class="archive-entry-desc" v-if="entry.description">{{ entry.description }}</div>
+        </div>
+      </div>
+    </div>
+    <div class="archive-empty" v-else>还没有播出过这一类记录。</div>
+  </div>
+
+  <!-- ══ 加载 / 错误 ═══════════════════════════════ -->
+  <div v-else class="panel center dim">加载中…</div>
+</div>
+
+<!-- ── vendored Vue 3（无构建步骤、不依赖网络）───────── -->
+<script src="vendor/vue.global.prod.js"></script>
+
+<!-- ── 引擎（classic script，file:// 下可用）──────────── -->
+<script src="src/engine/errors.js"></script>
+<script src="src/engine/rng.js"></script>
+<script src="src/engine/condition.js"></script>
+<script src="src/engine/state.js"></script>
+<script src="src/engine/props.js"></script>
+<script src="src/engine/scoring.js"></script>
+<script src="src/engine/format.js"></script>
+<script src="src/engine/registry.js"></script>
+<script src="src/engine/seal.js"></script>
+<script src="src/engine/run.js"></script>
+
+<!-- ── UI ─────────────────────────────────────────── -->
+<script src="src/ui/save.js"></script>
+<script src="src/ui/title.js"></script>
+<script src="src/ui/gacha.js"></script>
+<script src="src/ui/app.js"></script>
+
+<!-- ── 内容清单 + 加载器 ───────────────────────────── -->
+<script src="content/manifest.js"></script>
+<script src="src/ui/loader.js"></script>
+</body>
+</html>
