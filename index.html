@@ -1,0 +1,143 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no">
+<title>杀青 · 人生短剧模拟器</title>
+<link rel="stylesheet" href="src/ui/styles.css">
+</head>
+<body>
+<div id="app">
+  <!-- 片名页 -->
+  <section id="screen-title" class="screen">
+    <div class="brand">🎬 杀青</div>
+    <div class="brand-sub">人生短剧模拟器 · 每条命都是一部戏</div>
+    <div id="director-line" class="director"></div>
+    <div class="menu-btns">
+      <button id="btn-start" class="big-btn">🎥 开拍新戏</button>
+      <div class="row">
+        <button id="btn-dex" class="mid-btn">🪦 死法图鉴</button>
+        <button id="btn-works" class="mid-btn">🎞️ 作品架</button>
+      </div>
+      <div class="row small-row">
+        <button id="btn-shop" class="mid-btn ghost">🛒 轮回小卖部（<span id="reinc-num">0</span> 点）</button>
+      </div>
+      <div class="row small-row">
+        <button id="btn-sound" class="mid-btn ghost">🔇 音效：关</button>
+        <button id="btn-danmu" class="mid-btn ghost">💬 弹幕：开</button>
+      </div>
+    </div>
+    <div id="shop" class="shop hidden"></div>
+    <div id="challenge-banner" class="challenge hidden"></div>
+  </section>
+
+  <!-- 选角 -->
+  <section id="screen-draft" class="screen hidden">
+    <h2>选角：天赋十连抽</h2>
+    <p class="hint">点牌翻开，选 3 张。灰卡不丢人，负面的才有节目效果。</p>
+    <div id="draft-grid" class="draft-grid"></div>
+    <div class="bottom-bar"><button id="btn-draft-ok" class="big-btn" disabled>确定阵容（0/3）</button></div>
+  </section>
+
+  <!-- 配点 -->
+  <section id="screen-points" class="screen hidden">
+    <h2>剧组配置</h2>
+    <p class="hint">剩 <b id="pts-left">20</b> 点。体质决定寿命，快乐决定你能不能活到用寿命。</p>
+    <div id="preset-row" class="preset-row"></div>
+    <div id="dims-rows" class="dims-rows"></div>
+    <div class="row" style="margin-top:14px">
+      <span class="hint">性别：</span>
+      <button class="sex-btn" data-sex="m">男</button>
+      <button class="sex-btn" data-sex="f">女</button>
+      <button class="sex-btn" data-sex="r">随机</button>
+    </div>
+    <div class="bottom-bar"><button id="btn-life-start" class="big-btn">🎬 开机！</button></div>
+  </section>
+
+  <!-- 拍摄中 -->
+  <section id="screen-life" class="screen hidden">
+    <div id="hud">
+      <div id="hud-age">0 岁</div>
+      <div id="hud-dims"></div>
+    </div>
+    <div id="stream-wrap">
+      <div id="danmu-layer"></div>
+      <div id="stream"></div>
+      <div id="tap-hint">点击 · 过一年（长按连点）</div>
+    </div>
+    <div class="bottom-bar">
+      <button id="btn-auto" class="mid-btn ghost">▶ 自动</button>
+      <button id="btn-skip-life" class="mid-btn ghost">⏭ 快进到事件</button>
+    </div>
+    <!-- 决策弹层 -->
+    <div id="ask" class="ask hidden">
+      <div class="ask-card">
+        <div id="ask-title" class="ask-title"></div>
+        <div id="ask-opts" class="ask-opts"></div>
+      </div>
+    </div>
+    <!-- QTE -->
+    <div id="qte" class="qte hidden">
+      <div class="qte-title" id="qte-title">高考 · 狂点答题！</div>
+      <div class="qte-time"><div id="qte-bar"></div></div>
+      <div class="qte-count" id="qte-count">0</div>
+      <button id="qte-btn" class="qte-btn">点！</button>
+    </div>
+    <!-- 大劫算分 -->
+    <div id="boss" class="boss hidden">
+      <div class="boss-title" id="boss-title"></div>
+      <div class="boss-calc" id="boss-calc"></div>
+      <div class="boss-bar-wrap"><div class="boss-line" id="boss-line"></div><div id="boss-fill"></div></div>
+      <div class="boss-result" id="boss-result"></div>
+      <button id="boss-ok" class="mid-btn hidden">继续</button>
+    </div>
+  </section>
+
+  <!-- 杀青海报 -->
+  <section id="screen-poster" class="screen hidden">
+    <h2>本片已杀青</h2>
+    <canvas id="poster-canvas" width="720" height="1280"></canvas>
+    <div class="poster-btns">
+      <button id="btn-save" class="mid-btn">🖼️ 保存海报</button>
+      <button id="btn-copy" class="mid-btn">📋 复制文案</button>
+    </div>
+    <div class="poster-btns">
+      <button id="btn-challenge" class="mid-btn ghost">⚔️ 发起同题挑战</button>
+      <button id="btn-again" class="big-btn">🎥 再拍一部（轮回点数 +<span id="reinc-gain">0</span>）</button>
+    </div>
+    <div id="inherit-row" class="inherit-row"></div>
+  </section>
+
+  <!-- 图鉴/作品架 -->
+  <section id="screen-dex" class="screen hidden">
+    <div class="dex-tabs">
+      <button class="tab-btn active" data-tab="dex">🪦 死法图鉴</button>
+      <button class="tab-btn" data-tab="works">🎞️ 作品架</button>
+    </div>
+    <div id="dex-grid" class="dex-grid"></div>
+    <div id="works-grid" class="dex-grid hidden"></div>
+    <div class="bottom-bar"><button id="btn-dex-back" class="mid-btn">返回</button></div>
+  </section>
+</div>
+<script src="src/engine/engine.js"></script>
+<script src="content/talents.js"></script>
+<script src="content/fillers.js"></script>
+<script src="content/crises.js"></script>
+<script src="content/decades.js"></script>
+<script src="content/traits.js"></script>
+<script src="content/bosses.js"></script>
+<script src="content/tracks.js"></script>
+<script src="content/deaths.js"></script>
+<script src="content/events-child.js"></script>
+<script src="content/events-teen.js"></script>
+<script src="content/events-young.js"></script>
+<script src="content/events-mid.js"></script>
+<script src="content/events-late.js"></script>
+<script src="content/events-rare.js"></script>
+<script src="content/events-extra.js"></script>
+<script src="content/misc.js"></script>
+<script src="src/ui/sfx.js"></script>
+<script src="src/ui/poster.js"></script>
+<script src="src/ui/app.js"></script>
+</body>
+</html>

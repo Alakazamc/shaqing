@@ -2,3 +2,6 @@ node_modules/
 .DS_Store
 *.log
 ref/_x/
+test/shots/
+test/_p*
+*.log
