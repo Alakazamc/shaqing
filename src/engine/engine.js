@@ -376,6 +376,12 @@ window.BH = window.BH || {};
 
   // ---------- 主循环：过一年 ----------
   E.tick = function (S) {
+    const r = _tick(S);
+    if (S.pendingLine && r) { r.extra = [].concat(r.extra || [], S.pendingLine); S.pendingLine = null; }
+    return r;
+  };
+
+  function _tick(S) {
     if (S.phase !== 'life') return null;
     S.age++;
     for (const tid of S.talents) {
@@ -383,6 +389,16 @@ window.BH = window.BH || {};
       if (tl && tl.late && S.age >= tl.late.age && !S.seen['LT:' + tid]) { S.seen['LT:' + tid] = 1; applyEff(S, tl.late.e || {}); }
     }
     if (S.age >= S.lif) return dieNatural(S);
+
+    // 幕转场卡片（21-rhythm.md：节奏刻度）
+    const CH_TITLE = { 13: '—— 第一幕 · 少年 ——', 19: '—— 第二幕 · 青年 ——', 36: '—— 第三幕 · 中年 ——', 61: '—— 终幕 · 老年 ——' };
+    if (CH_TITLE[S.age] && !S.seen['CH:' + S.age]) {
+      S.seen['CH:' + S.age] = 1;
+      const chLine = { age: S.age, text: CH_TITLE[S.age], grade: -1, chapter: true, tags: [], danmaku: false };
+      S.lines.push(chLine);
+      S.wlog.push(wsum(S));
+      S.pendingLine = chLine;
+    }
 
     // 死亡链：体质归零
     if (S.dims.STR <= 0) {
@@ -425,6 +441,19 @@ window.BH = window.BH || {};
         return { line, ask: { kind: 'decade', age: S.age, opts: opts.map(o => ({ id: o.id, t: o.name, sub: o.desc })) } };
       }
     }
+    // 回忆杀：多年前的高光在晚年回响（叙事连贯性）
+    if (S.R() < 0.03 && S.lines.length > 10) {
+      const memCands = S.lines.filter(l => l.grade >= 2 && !l.death && !l.memory && l.age <= S.age - 15);
+      if (memCands.length) {
+        const old = memCands[(S.R() * memCands.length) | 0];
+        const tails = ['嘴角不自觉上扬。', '心里轻轻动了一下。', '你摇摇头笑了。', '那段日子突然清晰起来。', '你把这段记忆又擦亮了一遍。'];
+        const memLine = { age: S.age, text: '你想起了 ' + old.age + ' 岁那年——"' + old.text.replace('✨ ', '') + '"。' + tails[(S.R() * tails.length) | 0], grade: 1, memory: true, tags: [], danmaku: false };
+        S.lines.push(memLine);
+        S.wlog.push(wsum(S));
+        return { line: memLine };
+      }
+    }
+
     // 2.8 剧本队列强制续演（未到窗口的节拍留队等年龄）
     let qGuard = S.queue.length * 2 + 4;
     while (S.queue.length && qGuard-- > 0) {
@@ -618,7 +647,7 @@ window.BH = window.BH || {};
     const title = E.makeTitle(S);
 
     // 经典台词
-    const cand = S.lines.filter(l => l.grade >= 1 && !l.death && !l.boss);
+    const cand = S.lines.filter(l => l.grade >= 1 && !l.death && !l.boss && !l.memory);
     cand.sort((a, b) => (b.grade * 3 + (b.br ? 1 : 0)) - (a.grade * 3 + (a.br ? 1 : 0)));
     const quote = cand.length ? cand[(S.R() * Math.min(3, cand.length)) | 0].text : (S.lines[0] || {}).text || '无声之作。';
 

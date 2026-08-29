@@ -35,7 +35,7 @@ BH.TRACKS = [
     entryText: '💰【机缘】你在旧物市场花十块钱买的一个碗，鉴定结果是——民国的。',
     joinOpt: '攥紧碗，研究搞钱', passText: '你把碗转手卖了八千，觉得自己不是搞钱的料，去吃了顿好的。',
     passOpt: '见好就收',
-    cond: S => (S.dims.MNY >= 6 || S.stats.golden >= 1),
+    cond: S => (S.dims.MNY >= 5 || S.stats.golden >= 1),
     events: [
       { id: 'fh1', tr: { id: 'fuhao', d: 2 }, inc: { trd: [['fuhao', 1]] }, a: [20, 70], g: 2, t: '你的第一桶金到账了，你把钱分成了三份：理财、存款、和一份"手滑基金"。', e: { MNY: 2, JOY: 1 }, tags: ['rich'] },
       { id: 'fh2', tr: { id: 'fuhao', d: 3 }, inc: { trd: [['fuhao', 2]] }, a: [22, 75], g: 2, t: '你全款买了房，中介鞠躬的角度让你明白了什么叫服务。', e: { MNY: 1, JOY: 1 }, tags: ['rich'] },
@@ -50,7 +50,7 @@ BH.TRACKS = [
     entryText: '🏚️【机缘】深夜刷到一条视频：《五万块，在鹤岗全款拿下一套房》。你盯着看了很久。',
     joinOpt: '研究一下路线', passText: '你关掉了视频，但"全款拿下"四个字在你心里住下了。',
     passOpt: '再想想',
-    cond: S => (S.flags.includes('debt_chain') || S.dims.MNY <= 2 || S.tags.lie),
+    cond: S => (S.flags.includes('debt_chain') || S.dims.MNY <= 3 || S.tags.lie),
     events: [
       { id: 'hg1', tr: { id: 'hegang', d: 2 }, inc: { trd: [['hegang', 1]] }, a: [22, 70], g: 2, t: '你做好了攻略：鹤岗、乳山、个旧，三线对比表做了十八页。', e: { INT: 1, JOY: 1 }, tags: ['lie'] },
       { id: 'hg2', tr: { id: 'hegang', d: 3 }, inc: { trd: [['hegang', 2]] }, a: [23, 75], g: 2, t: '你请了年假去实地看房，中介说"这价格不是标的错，是市场的诚意"。', e: { JOY: 1, MNY: -1 }, tags: ['lie'] },

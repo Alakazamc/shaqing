@@ -21,7 +21,7 @@ BH.TRACKS.push(
     entryText: '🎫【机缘】你在漫展迷了路，抬头一看：一整条痛包大街在你眼前闪闪发光。',
     joinOpt: '掏出钱包', passText: '你退出了漫展，但那个吧唧的影子在你心里挂了三年。',
     passOpt: '我只是来看热闹的',
-    cond: S => (S.tags.ergci || S.dims.CHR >= 8),
+    cond: S => (S.tags.ergci || S.dims.CHR >= 7),
     events: [
       { id: 'eg1', tr: { id: 'ergu', d: 2 }, inc: { tg: ['ergci'] }, a: [13, 45], g: 2, t: '你吃下了第一个"吧唧"，从此钱包有了新的宗教。', e: { MNY: -1, JOY: 2 }, tags: ['ergci'] },
       { id: 'eg2', tr: { id: 'ergu', d: 3 }, inc: { trd: [['ergu', 2]] }, a: [14, 48], g: 2, t: '你的痛包在漫展被三个摄影师拦拍，你第一次体会到"包治百病"。', e: { CHR: 1, JOY: 1 }, tags: ['ergci'] },

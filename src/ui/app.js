@@ -57,12 +57,21 @@
     ];
     $('#shop').innerHTML = '<div class="hint">轮回点数：' + meta.reinc + '。买的是"下把"，买了就生效。</div>' + items.map(it =>
       `<button class="mid-btn" data-k="${it.k}" data-c="${it.cost}" ${meta[it.k] || meta.reinc < it.cost ? 'disabled' : ''}>${it.label}<small style="display:block;color:#8a8a98;font-size:11px;margin-top:2px">${it.desc} · ${it.cost} 点</small></button>`
-    ).join('');
-    $$('#shop button').forEach(b => b.onclick = () => {
+    ).join('')
+      + '<button class="mid-btn ghost" id="btn-wipe" style="margin-top:6px;color:#a06a6a">🗑️ 重置轮回存档</button>';
+    $$('#shop button[data-k]').forEach(b => b.onclick = () => {
       const k = b.dataset.k, c = +b.dataset.c;
       if (meta.reinc < c || meta[k]) return;
       meta.reinc -= c; meta[k] = 1; saveMeta(); renderShop(); $('#reinc-num').textContent = meta.reinc;
     });
+    const wipe = $('#btn-wipe');
+    if (wipe) wipe.onclick = () => {
+      if (wipe.dataset.arm) {
+        localStorage.removeItem(META_KEY);
+        meta = { reinc: 0, deaths: 0, works: [], dex: {}, endings: {}, ach: {}, best: 0, sound: meta.sound, danmu: meta.danmu, inherit: null, rigEpic: 0, bonus: 0, extra: 0 };
+        saveMeta(); renderShop(); renderTitle();
+      } else { wipe.dataset.arm = '1'; wipe.textContent = '⚠️ 再点一次确认清空（不可恢复）'; }
+    };
   }
 
   // ---------- 开局 ----------
@@ -394,6 +403,7 @@
       b.style.borderColor = '#e8443a';
     });
     show('#screen-poster');
+    appCtx.lastLines = S.lines;
     if (report.score >= 8.5 || report.box >= 50) BH.SFX.win();
     // 挑战对比
     if (challengeInfo) {
@@ -424,6 +434,16 @@
     const ta = document.createElement('textarea'); ta.value = txt; document.body.appendChild(ta);
     ta.select(); try { document.execCommand('copy'); done(); } catch (e) {} ta.remove();
   }
+  $('#btn-rewatch').onclick = () => {
+    const list = appCtx.lastLines || [];
+    $('#rewatch-list').innerHTML = list.map(l => {
+      const cls = l.death ? 'death' : l.chapter ? 'chapter' : l.grade === -1 ? 'gm1' : 'g' + l.grade;
+      return `<div class="line ${cls}">${l.age}岁 · ${esc(l.text)}</div>`;
+    }).join('');
+    $('#rewatch').classList.remove('hidden');
+    $('#rewatch-list').scrollTop = 0;
+  };
+  $('#btn-rewatch-close').onclick = () => $('#rewatch').classList.add('hidden');
   $('#btn-challenge').onclick = () => {
     if (!appCtx.report) return;
     const base = location.href.split('?')[0];

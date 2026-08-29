@@ -106,6 +106,7 @@
       <button id="btn-copy" class="mid-btn">📋 复制文案</button>
     </div>
     <div class="poster-btns">
+      <button id="btn-rewatch" class="mid-btn ghost">📜 重看一生</button>
       <button id="btn-challenge" class="mid-btn ghost">⚔️ 发起同题挑战</button>
       <button id="btn-again" class="big-btn">🎥 再拍一部（轮回点数 +<span id="reinc-gain">0</span>）</button>
     </div>
@@ -132,6 +133,14 @@
     <div id="feast-list" class="dex-grid" style="grid-template-columns:1fr;margin-top:12px"></div>
     <div class="bottom-bar"><button id="btn-feast-back" class="mid-btn">返回</button></div>
   </section>
+</div>
+
+  <!-- 重看一生 -->
+  <div id="rewatch" class="qte hidden">
+    <div class="boss-title">📜 一生全本</div>
+    <div id="rewatch-list" class="rewatch-list"></div>
+    <button id="btn-rewatch-close" class="mid-btn">关闭</button>
+  </div>
 </div>
 <script src="src/engine/engine.js"></script>
 <script src="content/talents.js"></script>
@@ -163,6 +172,7 @@
 <script src="content/arcs-misc.js"></script>
 <script src="content/events-fill1.js"></script>
 <script src="content/events-fill2.js"></script>
+<script src="content/events-fill3.js"></script>
 <script src="content/misc.js"></script>
 <script src="content/achievements.js"></script>
 <script src="content/titles.js"></script>
