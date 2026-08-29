@@ -173,12 +173,13 @@ window.BH = window.BH || {};
   function crisisCandidates(S) {
     const list = (BH.CRISES || []).filter(c => {
       if (S.age < (c.a ? c.a[0] : 0) || S.age > (c.a ? c.a[1] : 999)) return false;
-      const cd = S.crisisCd[c.id] || -99;
+      let trig = c.trig || {};
+    if (c.domain === 'health' && S.traits.includes('pao') && trig.STR) trig = Object.assign({}, trig, { STR: [trig.STR[0] - 1, '<'] });
+    const cd = S.crisisCd[c.id] || -99;
       if (S.age - cd < (c.cd || 8)) return false;
       const inc = c.inc || {};
       if (inc.f && !inc.f.every(f => S.flags.includes(f))) return false;
       if (excOk(S, c)) return false;
-      const trig = c.trig || {};
       for (const k of Object.keys(trig)) {
         const v = S.dims[k], need = trig[k];
         if (need[1] === '<' ? !(v <= need[0]) : !(v >= need[0])) return false;
@@ -228,7 +229,10 @@ window.BH = window.BH || {};
       const c = (BH.CRISES || []).find(x => x.id === payload.crisisId);
       const o = c && c.opts.find(x => x.id === id);
       if (o) {
-        applyEff(S, o.e || {});
+        const soft = (c.domain === 'emo' && S.traits.includes('jingshen')) || S.traits.includes('foxi2');
+        let eff = o.e || {};
+        if (soft) { eff = {}; for (const k in (o.e || {})) eff[k] = o.e[k] < 0 ? Math.ceil(o.e[k] / 2) : o.e[k]; }
+        applyEff(S, eff);
         (o.tg || []).forEach(t => addTag(S, t));
         if (o.f) addFlag(S, o.f);
         if (o.clear) { if (o.clear === 'debt') S.debtSince = -1; if (o.clear === 'emo') S.emoStrikes = 0; }
@@ -339,7 +343,7 @@ window.BH = window.BH || {};
       for (const ev of (subs[f] || [])) {
         if (S.queue.includes(ev.id) || S.seen[ev.id]) continue;
         // 只入队"当前或近两年窗口内"的节拍；远期节拍走普通抽卡
-        if (ev.a[0] <= S.age + 2 && ev.a[1] >= S.age - 1 && eventOk(S, ev)) {
+        if (ev.a[0] <= S.age + 4 && ev.a[1] >= S.age - 1 && eventOk(S, ev)) {
           S.queue.push(ev.id); added = true;
           if (S.queue.length >= 4) return added;
         }
@@ -352,6 +356,10 @@ window.BH = window.BH || {};
   E.tick = function (S) {
     if (S.phase !== 'life') return null;
     S.age++;
+    for (const tid of S.talents) {
+      const tl = BH.TALENTS.find(x => x.id === tid);
+      if (tl && tl.late && S.age >= tl.late.age && !S.seen['LT:' + tid]) { S.seen['LT:' + tid] = 1; applyEff(S, tl.late.e || {}); }
+    }
     if (S.age >= S.lif) return dieNatural(S);
 
     // 死亡链：体质归零
@@ -362,6 +370,7 @@ window.BH = window.BH || {};
     // 意外死亡
     let pAcc = 0.008 + (S.debtSince >= 0 && S.age - S.debtSince > 6 ? 0.008 : 0)
       + (S.flags.includes('ignore_health') ? 0.006 : 0) + (S.age > 72 ? 0.016 : 0);
+    if (S.talents.includes('tieding')) pAcc *= 0.6;
     if (S.R() < pAcc) {
       const pool = (BH.DEATHS || []).filter(x => !x.ok || x.ok(S) !== false);
       const irony = pool.filter(x => (x.ironyTags || []).some(t => S.tags[t]));
@@ -440,6 +449,9 @@ window.BH = window.BH || {};
     // 5. 机缘（金闪）
     let gRate = 0.025;
     if (S.talents.includes('yeli')) gRate *= 1.6;
+    if (S.talents.includes('tiangou')) gRate *= 1.8;
+    if (S.traits.includes('ouhuang')) gRate *= 1.5;
+    if (S.traits.includes('feiqiu')) gRate *= 0.7;
     if (S.R() < gRate) {
       // 先看轨道入口（符合条件的多条随机挑一条，避免电竞独吞入口）
       const tes = (BH.TRACKS || []).filter(t => !S.tracks[t.id] && S.age >= (t.entryAge || 0)
@@ -477,8 +489,10 @@ window.BH = window.BH || {};
   // 压缩：连续 3+ 平淡年（含 grade0 事件）→ 快进到检查点前
   function tryCompress(S) {
     if ((S.plainStreak || 0) < 3) return null;
-    const cps = [...DECADE_AGES, ...BOSS_AGES, ...TRAIT_AGES, S.lif - 1].filter(a => a > S.age);
-    const next = cps.length ? Math.min(...cps) : S.lif;
+    const cps = [...DECADE_AGES, ...BOSS_AGES, ...TRAIT_AGES, S.lif - 1];
+    for (const qid of S.queue) { const qe = (BH.EVENTS || []).find(x => x.id === qid); if (qe) cps.push(qe.a[1] + 1); }
+    const cpFiltered = cps.filter(a => a > S.age);
+    const next = cpFiltered.length ? Math.min(...cpFiltered) : S.lif;
     let jump = 2 + ((S.R() * 3) | 0);
     jump = Math.min(jump, next - 1 - S.age);
     if (jump >= 2) {

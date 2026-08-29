@@ -190,7 +190,7 @@
     else if (line.grade === 2) poolName = 'epic';
     else if (line.grade === 1) poolName = 'rare';
     if (line.tags) {
-      for (const tg of ['emo', 'rich', 'dianjing', 'xiuxian', 'lie', 'fame', 'guaitan']) {
+      for (const tg of ['emo', 'rich', 'dianjing', 'xiuxian', 'lie', 'fame', 'guaitan', 'ergci', 'shuochang', 'mofa', 'aicy']) {
         if (line.tags.includes(tg) && line.grade >= 1) { poolName = tg; break; }
       }
     }
@@ -252,7 +252,10 @@
     const box = $('#ask'), title = $('#ask-title'), opts = $('#ask-opts');
     let t = '', list = [];
     if (ask.kind === 'branch') { t = '你的选择：'; list = ask.opts; }
-    else if (ask.kind === 'crisis') { t = '怎么办？'; list = ask.opts; }
+    else if (ask.kind === 'crisis') {
+      t = ({ debt: '💸 怎么办？', emo: '🌧️ 想聊聊吗？', health: '🩺 怎么办？', opp: '✨ 机会来了' })[ask.domain] || '怎么办？';
+      list = ask.opts.map(o => ({ ...o, gold: ask.domain === 'opp' }));
+    }
     else if (ask.kind === 'decade') { t = '🪧 十年路牌'; list = ask.opts.map(o => ({ id: o.id, t: o.t, sub: o.sub })); }
     else if (ask.kind === 'trait') { t = '✦ 你感觉自己又行了，三选一：'; list = ask.opts; }
     else if (ask.kind === 'golden') { t = '命运敲门了。'; list = ask.opts.map(o => ({ id: o.id, t: o.t, gold: o.id === 'join' })); }
