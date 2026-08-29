@@ -34,7 +34,7 @@ window.BH = window.BH || {};
       sex: null, talents: [], traits: [],
       flags: [], tags: {}, tracks: {},
       wlog: [], lines: [], // {age,text,grade,br}
-      seen: {}, plainStreak: 0,
+      seen: {}, plainStreak: 0, queue: [],
       stats: { gradeSum: 0, legend: 0, rare: 0, epic: 0, branches: 0, crises: 0, golden: 0 },
       decade: {}, bossDone: {}, traitDone: {},
       crisisCd: {}, debtSince: -1, emoStrikes: 0,
@@ -122,7 +122,11 @@ window.BH = window.BH || {};
   function evWeight(S, ev) {
     let x = (ev.w || 1);
     const g = ev.g || 0;
-    if (g === 1) x *= 0.35; if (g === 2) x *= 0.12; if (g === 3) x *= 0.03;
+    // 剧本节拍（story/inc.f）豁免稀有度税并高动量续演（20-arcs.md §1）
+    const isBeat = !!(ev.inc && ev.inc.f && ev.inc.f.length);
+    if (ev.story) x *= 30;
+    else if (isBeat) x *= 12;
+    else { if (g === 1) x *= 0.35; if (g === 2) x *= 0.12; if (g === 3) x *= 0.03; }
     for (const tg of (ev.tags || [])) if (S.bias.tag[tg]) x *= S.bias.tag[tg];
     if (ev.tr) { const id = ev.tr.id || ev.tr; x *= (S.bias.track[id] || 1) * (1.5 + (S.tracks[id] || 0) * 0.9); }
     // 反转槽补偿：本十年稀有出勤不足则加权
@@ -141,7 +145,7 @@ window.BH = window.BH || {};
     S.seen[ev.id] = 1;
     applyEff(S, ev.e || {});
     (ev.tags || []).forEach(t => addTag(S, t));
-    if (ev.flag) addFlag(S, ev.flag);
+    if (ev.flag) { addFlag(S, ev.flag); syncQueue(S); }
     if (ev.tr) {
       const id = ev.tr.id || ev.tr, d = ev.tr.d || 1;
       S.tracks[id] = Math.max(S.tracks[id] || 0, d);
@@ -216,6 +220,7 @@ window.BH = window.BH || {};
         if (o.tr) S.tracks[o.tr.id] = Math.max(S.tracks[o.tr.id] || 0, o.tr.d || 1);
         const line = { age: S.age, text: '→ ' + (o.rt || o.t), grade: 1, tags: o.tg || [], danmaku: true };
         S.lines.push(line);
+        syncQueue(S);
       }
       return { line: S.lines[S.lines.length - 1] };
     }
@@ -229,6 +234,7 @@ window.BH = window.BH || {};
         if (o.clear) { if (o.clear === 'debt') S.debtSince = -1; if (o.clear === 'emo') S.emoStrikes = 0; }
         const line = { age: S.age, text: '→ ' + (o.rt || o.t), grade: 0, tags: o.tg || [], danmaku: o.dm !== false };
         S.lines.push(line);
+        syncQueue(S);
       }
       return { line: S.lines[S.lines.length - 1] };
     }
@@ -286,7 +292,7 @@ window.BH = window.BH || {};
     S.bossDone[payload.age] = band;
     const opt = B.opts.find(o => o.id === band) || B.opts[0];
     applyEff(S, opt.e || {});
-    if (opt.f) addFlag(S, opt.f);
+    if (opt.f) { addFlag(S, opt.f); syncQueue(S); }
     (opt.tg || []).forEach(t => addTag(S, t));
     const line = { age: S.age, text: '★ ' + opt.rt, grade: 2, boss: B.id, tags: opt.tg || [], danmaku: true };
     S.lines.push(line);
@@ -315,6 +321,32 @@ window.BH = window.BH || {};
     for (const o of B.opts) { if (score >= (o.min ?? -999)) { band = o.id; break; } }
     return band;
   };
+
+  // ---------- 剧本队列：旗标→订阅事件，节拍强制续演（20-arcs.md §1）----------
+  let _flagSubs = null;
+  function flagSubs() {
+    if (_flagSubs) return _flagSubs;
+    _flagSubs = {};
+    for (const ev of (BH.EVENTS || [])) {
+      for (const f of ((ev.inc && ev.inc.f) || [])) (_flagSubs[f] = _flagSubs[f] || []).push(ev);
+    }
+    return _flagSubs;
+  }
+  function syncQueue(S) {
+    const subs = flagSubs();
+    let added = false;
+    for (const f of S.flags) {
+      for (const ev of (subs[f] || [])) {
+        if (S.queue.includes(ev.id) || S.seen[ev.id]) continue;
+        // 只入队"当前或近两年窗口内"的节拍；远期节拍走普通抽卡
+        if (ev.a[0] <= S.age + 2 && ev.a[1] >= S.age - 1 && eventOk(S, ev)) {
+          S.queue.push(ev.id); added = true;
+          if (S.queue.length >= 4) return added;
+        }
+      }
+    }
+    return added;
+  }
 
   // ---------- 主循环：过一年 ----------
   E.tick = function (S) {
@@ -361,6 +393,22 @@ window.BH = window.BH || {};
         S.lines.push(line);
         return { line, ask: { kind: 'decade', age: S.age, opts: opts.map(o => ({ id: o.id, t: o.name, sub: o.desc })) } };
       }
+    }
+    // 2.8 剧本队列强制续演（未到窗口的节拍留队等年龄）
+    let qGuard = S.queue.length * 2 + 4;
+    while (S.queue.length && qGuard-- > 0) {
+      const qid = S.queue.shift();
+      const ev = (BH.EVENTS || []).find(x => x.id === qid);
+      if (!ev) continue;
+      if (!eventOk(S, ev)) {
+        if (!S.seen[ev.id] && ev.a[1] + 2 >= S.age) S.queue.push(qid);
+        continue;
+      }
+      const r = emit(S, runEvent(S, ev));
+      syncQueue(S);
+      const cl = tryCompress(S);
+      if (cl) r.extra = cl;
+      return r;
     }
     // 3. 危机
     const cc = crisisCandidates(S);
@@ -503,7 +551,7 @@ window.BH = window.BH || {};
     if (S.deathCause && S.deathCause.cause === '长眠') { irony = 1.2; ironyWhy = 'emo线收束'; }
     S.ironyWhy = ironyWhy;
 
-    let score = 4.2 + Math.min(S.stats.legend, 3) * 0.7 + S.stats.rare * 0.09 + S.stats.branches * 0.15 + maxDepth * 0.25 + irony;
+    let score = 4.0 + Math.min(S.stats.legend, 3) * 0.55 + S.stats.rare * 0.04 + S.stats.branches * 0.05 + maxDepth * 0.2 + irony;
     const totalLines = S.lines.length || 1;
     const plainRatio = S.lines.filter(l => l.grade === 0 && !l.compress).length / totalLines;
     if (plainRatio > 0.75) score -= 1.6;

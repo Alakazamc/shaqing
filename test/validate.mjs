@@ -83,6 +83,18 @@ const cov = new Array(101).fill(0);
 for (const e of BH.EVENTS) for (let a = e.a[0]; a <= Math.min(e.a[1], 100); a++) cov[a]++;
 for (let a = 0; a <= 90; a++) if (cov[a] < 3) warns.push(`年龄 ${a} 岁可用事件少于 3 条（现 ${cov[a]}）`);
 
+// ===== 旗标完整性（剧本链不断线检查）=====
+const setters = new Set();
+for (const e of BH.EVENTS) { if (e.flag) setters.add(e.flag); (e.br || []).forEach(b => b.f && setters.add(b.f)); }
+BH.CRISES.forEach(c => c.opts.forEach(o => o.f && setters.add(o.f)));
+BH.BOSSES.forEach(b => b.opts.forEach(o => o.f && setters.add(o.f)));
+BH.TALENTS.forEach(t => t.flag && setters.add(t.flag));
+BH.DECADES.forEach(d => d.opts.forEach(o => o.f && setters.add(o.f)));
+let flagWarn = 0;
+for (const e of BH.EVENTS) {
+  for (const f of ((e.inc && e.inc.f) || [])) if (!setters.has(f)) { warns.push(`事件 ${e.id} 引用无人设置的旗标 inc.f:${f}`); flagWarn++; }
+}
+
 // ===== 汇总 =====
 console.log(`事件总数: ${BH.EVENTS.length}（含轨道 ${(BH.TRACKS || []).reduce((n, t) => n + (t.events || []).length, 0)}）`);
 console.log(`天赋 ${BH.TALENTS.length} | 死法 ${BH.DEATHS.length} | 危机 ${BH.CRISES.length} | 路牌 ${BH.DECADES.length} | 特质 ${BH.TRAITS.length} | 大劫 ${BH.BOSSES.length}`);
