@@ -85,6 +85,8 @@ BH.Poster = (function () {
     // 演职员表
     ctx.font = '700 20px sans-serif'; ctx.fillStyle = '#9ec1ff';
     ctx.fillText('▸ 演职员表', 44, y); y += 26;
+    ctx.font = '700 19px sans-serif'; ctx.fillStyle = 'rgba(255,255,255,.92)';
+    ctx.fillText('领衔主演：' + (S.name || '无名之辈') + '（' + (S.sex === 'f' ? '女' : '男') + '）', 44, y); y += 27;
     ctx.font = '18px sans-serif';
     const cast = S.talents.map(id => { const t = BH.TALENTS.find(x => x.id === id); return t ? t.emoji + t.name : ''; }).filter(Boolean);
     drawLines(ctx, '主演：' + cast.join(' / '), 44, y, W - 88, 26, 2, 'rgba(255,255,255,.85)', '18px sans-serif'); y += 30;

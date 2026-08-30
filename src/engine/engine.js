@@ -44,7 +44,7 @@ window.BH = window.BH || {};
       sex: null, talents: [], traits: [],
       flags: [], tags: {}, tracks: {},
       wlog: [], lines: [], // {age,text,grade,br}
-      seen: {}, plainStreak: 0, queue: [], titles: [], moments: 0,
+      seen: {}, plainStreak: 0, queue: [], titles: [], moments: 0, mxg: {},
       stats: { gradeSum: 0, legend: 0, rare: 0, epic: 0, branches: 0, crises: 0, golden: 0 },
       decade: {}, bossDone: {}, traitDone: {},
       crisisCd: {}, debtSince: -1, emoStrikes: 0,
@@ -116,6 +116,7 @@ window.BH = window.BH || {};
     if (S.seen[ev.id]) return false;
     if (S.age < ev.a[0] || S.age > ev.a[1]) return false;
     const inc = ev.inc || {}, exc = ev.exc || {};
+    if (ev.mx && S.mxg[ev.mx] && S.mxg[ev.mx] !== ev.id) return false;
     if (inc.f && !inc.f.every(f => S.flags.includes(f))) return false;
     if (inc.tg && !inc.tg.every(t => S.tags[t])) return false;
     if (inc.tr && !inc.tr.every(t => S.tracks[t])) return false;
@@ -161,6 +162,7 @@ window.BH = window.BH || {};
       const id = ev.tr.id || ev.tr, d = ev.tr.d || 1;
       S.tracks[id] = Math.max(S.tracks[id] || 0, d);
     }
+    if (ev.mx) S.mxg[ev.mx] = ev.id;
     const g = ev.g || 0;
     S.stats.gradeSum += g + 1;
     if (g === 1) S.stats.rare++; if (g === 2) S.stats.epic++; if (g === 3) S.stats.legend++;
@@ -441,6 +443,15 @@ window.BH = window.BH || {};
     }
 
     // 1. 大劫
+    if (S.age === 28 && !S.bossDone[28] && S.flags.includes('lo_married')) {
+      S.bossDone[28] = 'love';
+      const mgLine = { age: 28, text: '💍 28 岁，同龄人在相亲角进进出出，你和初恋把证领了——所谓相亲，从此只是你们家的饭桌笑话。', grade: 2, tags: ['love', 'family'], danmaku: true };
+      S.lines.push(mgLine);
+      S.stats.gradeSum += 3;
+      addTag(S, 'love');
+      S.wlog.push(wsum(S));
+      return { line: mgLine };
+    }
     if (BOSS_AGES.includes(S.age) && !S.bossDone[S.age]) {
       const B = (BH.BOSSES || []).find(x => x.age === S.age);
       if (B) {
@@ -577,7 +588,7 @@ window.BH = window.BH || {};
     }
     // 7. 平年
     const band = S.age <= 3 ? 'baby' : S.age <= 12 ? 'child' : S.age <= 18 ? 'teen' : S.age <= 30 ? 'young' : S.age <= 50 ? 'mid' : S.age <= 68 ? 'late' : 'old';
-    const fill = pick((BH.FILLERS && BH.FILLERS[band]) || ['这一年平淡如水。'], S.R);
+    const fill = pickFiller(S, band);
     S.lines.push({ age: S.age, text: fill, grade: 0, tags: [], danmaku: false });
     S.plainStreak++;
     S.stats.tenRareMiss = (S.stats.tenRareMiss || 0) + 1;
@@ -585,6 +596,17 @@ window.BH = window.BH || {};
     const cl2 = tryCompress(S);
     return { line: S.lines[S.lines.length - 1], extra: cl2 };
   };
+
+  function pickFiller(S, band) {
+    const arr = (BH.FILLERS && BH.FILLERS[band]) || ['这一年平淡如水。'];
+    S.uf = S.uf || {};
+    const used = S.uf[band] = S.uf[band] || new Set();
+    const avail = [];
+    for (let i = 0; i < arr.length; i++) if (!used.has(i)) avail.push(i);
+    const idx = avail.length ? avail[(S.R() * avail.length) | 0] : (S.R() * arr.length) | 0;
+    used.add(idx);
+    return arr[idx];
+  }
 
   // 压缩：连续 3+ 平淡年（含 grade0 事件）→ 快进到检查点前
   function tryCompress(S) {

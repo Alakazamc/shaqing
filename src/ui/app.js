@@ -149,6 +149,7 @@
     $$('.sex-btn').forEach(b => b.onclick = () => { $$('.sex-btn').forEach(x => x.classList.remove('on')); b.classList.add('on'); S.sex = b.dataset.sex === 'r' ? (Math.random() < 0.5 ? 'm' : 'f') : b.dataset.sex; });
     $('#btn-life-start').onclick = () => {
       if (S.sex === null) S.sex = Math.random() < 0.5 ? 'm' : 'f';
+      if (BH.NAMES) S.name = BH.NAMES.sn[(Math.random() * BH.NAMES.sn.length) | 0] + BH.NAMES[S.sex][(Math.random() * BH.NAMES[S.sex].length) | 0];
       BH.applyPoints(S, deltas);
       startLife();
     };
@@ -171,6 +172,7 @@
     $('#stream').innerHTML = '';
     renderHUD();
     addLine({ age: 0, text: '🎥 开机。你的人生开拍了。', grade: -1, tags: [], danmaku: false });
+    if (S.name) addLine({ age: 0, text: '🏷️ 爸妈翻了整本字典，给你取名【' + S.name + '】。性别：' + (S.sex === 'f' ? '女孩' : '男孩') + '。', grade: 1, tags: ['family'], danmaku: false });
   }
   let lastDims = null;
   const CHAPTER_NAME = { prologue: '序幕 · 童年', act1: '第一幕 · 少年', act2: '第二幕 · 青年', act3: '第三幕 · 中年', finale: '终幕 · 老年' };
@@ -184,7 +186,7 @@
   };
   function renderHUD() {
     $('#hud-age').firstChild.nodeValue = S.age + ' 岁 ';
-    $('#hud-chapter').textContent = '· ' + (CHAPTER_NAME[BH.chapterOf(S.age).id] || '');
+    $('#hud-chapter').textContent = '· ' + (S.name || '') + (S.sex === 'f' ? ' ♀' : ' ♂') + ' · ' + (CHAPTER_NAME[BH.chapterOf(S.age).id] || '');
     $('#hud-titles').textContent = '🏅' + S.titles.length;
     $('#hud-dims').innerHTML = Object.keys(DIM_NAMES).map(k => {
       let cls = '';
@@ -278,7 +280,9 @@
         : `${S.tags[key] || 0}/3，还在路上`;
       obHtml = `<div class="pf-row"><span>💫 ${NAMES[key]}</span><b>${st}</b></div>`;
     }
+    const nameRow = `<div class="pf-sec"><div class="pf-h">主演</div><div class="pf-row"><span>🎭 ${S.name || '无名之辈'}（${S.sex === 'f' ? '女' : '男'}）</span><b>领衔主演</b></div></div>`;
     $('#prof-body').innerHTML = `
+      ${nameRow}
       <div class="pf-sec"><div class="pf-h">五维</div>${dimRows}</div>
       <div class="pf-sec"><div class="pf-h">命运线</div>${trackRows || '<div class="pf-empty">还没有走入任何一条线。机缘是留给出门的人的。</div>'}</div>
       <div class="pf-sec"><div class="pf-h">执念</div>${obHtml}</div>
