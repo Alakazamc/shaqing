@@ -380,19 +380,40 @@
 
   // 点击/长按
   const wrap = $('#stream-wrap');
+  // 阅读节奏：重要事件给足停顿（21-rhythm.md §3）
+  function readDelay() {
+    const last = S && S.lines[S.lines.length - 1];
+    if (!last) return 1050;
+    if (last.grade === 3) return 2400;
+    if (last.grade === 2 || last.arc) return 1900;
+    if (last.memory || last.title) return 1600;
+    if (last.grade === 1) return 1350;
+    return 1050;
+  }
+  function holdStep() {
+    doTick();
+    const last = S && S.lines[S.lines.length - 1];
+    const important = last && (last.grade >= 2 || last.arc || last.memory || last.title);
+    holdTimer = setTimeout(holdStep, important ? 560 : 170);
+  }
   wrap.addEventListener('pointerdown', e => {
     if (e.target.closest('.ask') || e.target.closest('.qte') || e.target.closest('.boss')) return;
-    doTick();
-    holdTimer = setInterval(doTick, 170);
+    clearTimeout(holdTimer);
+    holdStep();
   });
-  ['pointerup', 'pointerleave', 'pointercancel'].forEach(ev => wrap.addEventListener(ev, () => clearInterval(holdTimer)));
+  ['pointerup', 'pointerleave', 'pointercancel'].forEach(ev => wrap.addEventListener(ev, () => clearTimeout(holdTimer)));
 
+  let autoOn = false;
+  function autoStep() {
+    doTick();
+    if (autoOn && S && S.phase === 'life' && !pendingAsk) autoTimer = setTimeout(autoStep, readDelay());
+  }
   $('#btn-auto').onclick = () => {
-    if (autoTimer) { stopAuto(); return; }
-    $('#btn-auto').textContent = '⏸ 停';
-    autoTimer = setInterval(doTick, 1150);
+    autoOn = !autoOn;
+    if (autoOn) { $('#btn-auto').textContent = '⏸ 停'; autoStep(); }
+    else stopAuto();
   };
-  function stopAuto() { if (autoTimer) { clearInterval(autoTimer); autoTimer = null; $('#btn-auto').textContent = '▶ 自动'; } }
+  function stopAuto() { clearTimeout(autoTimer); autoTimer = null; autoOn = false; $('#btn-auto').textContent = '▶ 自动'; }
   $('#btn-skip-life').onclick = () => {
     let n = 0;
     const step = () => {
@@ -429,6 +450,7 @@
       if (r && r.extra) [].concat(r.extra).forEach(addLine);
       pendingAsk = null;
       renderHUD();
+      if (autoOn) autoStep();
       if (S.phase === 'end') { busy = true; setTimeout(settlement, 1400); }
     });
   }
@@ -531,6 +553,7 @@
               if (r.extra) [].concat(r.extra).forEach(addLine);
               pendingAsk = null;
               renderHUD();
+              if (autoOn) autoStep();
               if (S.phase === 'end') { busy = true; setTimeout(settlement, 1400); }
             };
         }, 350);

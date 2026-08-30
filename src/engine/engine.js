@@ -8,7 +8,7 @@ window.BH = window.BH || {};
   const DIM_KEYS = ['CHR', 'INT', 'STR', 'MNY', 'JOY'];
   // 五幕节奏表（21-rhythm.md §1）
   const PACE = [
-    { id: 'prologue', max: 12, compressAfter: 4, golden: 0.5 },
+    { id: 'prologue', max: 12, compressAfter: 3, golden: 0.5 },
     { id: 'act1', max: 18, compressAfter: 4, golden: 0.8 },
     { id: 'act2', max: 35, compressAfter: 3, golden: 1.2 },
     { id: 'act3', max: 60, compressAfter: 3, golden: 1.0 },
@@ -134,6 +134,7 @@ window.BH = window.BH || {};
     const g = ev.g || 0;
     // 剧本节拍（story/inc.f）豁免稀有度税并高动量续演（20-arcs.md §1）
     const isBeat = !!(ev.inc && ev.inc.f && ev.inc.f.length);
+    if (ev.br && S.age - (S.lastAskYear === undefined ? -9 : S.lastAskYear) < 2) x *= 0.15;
     if (ev.story) x *= 30;
     else if (isBeat) x *= 12;
     else { if (g === 1) x *= 0.35; if (g === 2) x *= 0.12; if (g === 3) x *= 0.03; }
@@ -381,6 +382,7 @@ window.BH = window.BH || {};
   E.tick = function (S) {
     const r = _tick(S);
     if (S.pendingLine && r) { r.extra = [].concat(r.extra || [], S.pendingLine); S.pendingLine = null; }
+    if (r && r.ask) S.lastAskYear = S.age;
     return r;
   };
 
@@ -444,6 +446,21 @@ window.BH = window.BH || {};
         return { line, ask: { kind: 'decade', age: S.age, opts: opts.map(o => ({ id: o.id, t: o.name, sub: o.desc })) } };
       }
     }
+    // 半生回望：51 岁的中场锚点（21-rhythm.md §3）
+    if (S.age === 51 && !S.seen['HLF'] && S.lines.length > 14) {
+      const hl = S.lines.filter(l => l.grade >= 2 && !l.death && !l.memory && l.age <= 45);
+      if (hl.length >= 2) {
+        S.seen['HLF'] = 1;
+        const a1 = hl[(S.R() * hl.length) | 0];
+        let b1 = hl[(S.R() * hl.length) | 0];
+        let gd = 0; while (b1 === a1 && gd++ < 10) b1 = hl[(S.R() * hl.length) | 0];
+        const ln = { age: S.age, text: '📋 半生回望：' + a1.age + ' 岁，"' + a1.text.replace('✨ ', '') + '"；' + b1.age + ' 岁，"' + b1.text.replace('✨ ', '') + '"。前半本翻完了，后半本才刚起笔。', grade: 1, memory: true, tags: [], danmaku: true };
+        S.lines.push(ln);
+        S.wlog.push(wsum(S));
+        return { line: ln };
+      }
+    }
+
     // 回忆杀：多年前的高光在晚年回响（叙事连贯性）
     if (S.R() < 0.03 && S.lines.length > 10) {
       const memCands = S.lines.filter(l => l.grade >= 2 && !l.death && !l.memory && l.age <= S.age - 15);
@@ -467,6 +484,8 @@ window.BH = window.BH || {};
         if (!S.seen[ev.id] && ev.a[1] + 2 >= S.age) S.queue.push(qid);
         continue;
       }
+      // 分支节流：抉择之间至少隔 2 年，不到点就留队明年再来
+      if (ev.br && S.age - (S.lastAskYear === undefined ? -9 : S.lastAskYear) < 2) { S.queue.push(ev.id); continue; }
       const r = emit(S, runEvent(S, ev));
       syncQueue(S);
       const extras = [];
@@ -555,7 +574,7 @@ window.BH = window.BH || {};
     for (const qid of S.queue) { const qe = (BH.EVENTS || []).find(x => x.id === qid); if (qe) cps.push(qe.a[1] + 1); }
     const cpFiltered = cps.filter(a => a > S.age);
     const next = cpFiltered.length ? Math.min(...cpFiltered) : S.lif;
-    let jump = 2 + ((S.R() * 3) | 0);
+    let jump = 3 + ((S.R() * 3) | 0);
     jump = Math.min(jump, next - 1 - S.age);
     if (jump >= 2) {
       const y0 = S.age, y1 = S.age + jump;
