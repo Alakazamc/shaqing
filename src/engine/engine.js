@@ -44,7 +44,7 @@ window.BH = window.BH || {};
       sex: null, talents: [], traits: [],
       flags: [], tags: {}, tracks: {},
       wlog: [], lines: [], // {age,text,grade,br}
-      seen: {}, plainStreak: 0, queue: [], titles: [], moments: 0, mxg: {},
+      seen: {}, plainStreak: 0, queue: [], titles: [], moments: 0, mxg: {}, entryCd: 2,
       stats: { gradeSum: 0, legend: 0, rare: 0, epic: 0, branches: 0, crises: 0, golden: 0 },
       decade: {}, bossDone: {}, traitDone: {},
       crisisCd: {}, debtSince: -1, emoStrikes: 0,
@@ -135,8 +135,8 @@ window.BH = window.BH || {};
     const g = ev.g || 0;
     // 剧本节拍（story/inc.f）豁免稀有度税并高动量续演（20-arcs.md §1）
     const isBeat = !!(ev.inc && ev.inc.f && ev.inc.f.length);
-    if (ev.br && S.age - (S.lastSoftAsk === undefined ? -9 : S.lastSoftAsk) < 2) x *= 0.15;
-    if (ev.story) x *= 30;
+    if (ev.br && S.age - (S.lastAskYear === undefined ? -9 : S.lastAskYear) < 1) x *= 0.15;
+    if (ev.story) x *= 10;
     else if (isBeat) x *= 12;
     else { if (g === 1) x *= 0.35; if (g === 2) x *= 0.12; if (g === 3) x *= 0.03; }
     for (const tg of (ev.tags || [])) if (S.bias.tag[tg]) x *= S.bias.tag[tg];
@@ -386,7 +386,7 @@ window.BH = window.BH || {};
   E.tick = function (S) {
     const r = _tick(S);
     if (S.pendingLine && r) { r.extra = [].concat(r.extra || [], S.pendingLine); S.pendingLine = null; }
-    if (r && r.ask && ['crisis', 'trait', 'branch', 'golden'].includes(r.ask.kind)) S.lastSoftAsk = S.age;
+    if (r && r.ask) S.lastAskYear = S.age;
     return r;
   };
 
@@ -491,6 +491,27 @@ window.BH = window.BH || {};
       }
     }
 
+    // 剧本入口调度器：每 3 年左右强制开启一条符合条件的新线（39 条线公平轮转）
+    S.entryCd = (S.entryCd === undefined ? 2 : S.entryCd) - 1;
+    if (S.entryCd <= 0 && S.queue.length < 2) {
+      if (!BH._storyEntries) BH._storyEntries = (BH.EVENTS || []).filter(ev => ev.story);
+      const elig = BH._storyEntries.filter(ev => eventOk(S, ev) && !S.queue.includes(ev.id));
+      if (elig.length) {
+        const ev = drawEvent(S, elig);
+        S.entryCd = 3;
+        const r = emit(S, runEvent(S, ev));
+        syncQueue(S);
+        const extras = [];
+        const cl = tryCompress(S);
+        if (cl) extras.push(cl);
+        const tl = nextTitle(S);
+        if (tl) extras.push(tl);
+        if (extras.length) r.extra = extras;
+        return r;
+      }
+      S.entryCd = 1;
+    }
+
     // 回忆杀：多年前的高光在晚年回响（叙事连贯性）
     if (S.R() < 0.03 && S.lines.length > 10) {
       const memCands = S.lines.filter(l => l.grade >= 2 && !l.death && !l.memory && l.age <= S.age - 15);
@@ -514,8 +535,8 @@ window.BH = window.BH || {};
         if (!S.seen[ev.id] && ev.a[1] + 2 >= S.age) S.queue.push(qid);
         continue;
       }
-      // 分支节流：软抉择之间至少隔 2 年（大劫/路牌是硬时刻不计数），不到点留队
-      if (ev.br && S.age - (S.lastSoftAsk === undefined ? -9 : S.lastSoftAsk) < 2) { S.queue.push(ev.id); continue; }
+      // 分支节流：不连续两年出抉择（剧本链每两年一拍，节奏成立）
+      if (ev.br && S.age - (S.lastAskYear === undefined ? -9 : S.lastAskYear) < 1) { S.queue.push(ev.id); continue; }
       const r = emit(S, runEvent(S, ev));
       syncQueue(S);
       const extras = [];
