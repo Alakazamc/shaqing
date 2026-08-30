@@ -3,4 +3,4 @@ node_modules/
 *.log
 ref/
 test/shots/
-test/_p*
+test/_*
