@@ -76,7 +76,14 @@ for (const c of BH.CRISES) {
 }
 for (const d of BH.DECADES) for (const o of d.opts) if (!o.name || !o.desc || !o.rt) errs.push(`路牌 ${d.age} 选项不完整`);
 const tids = new Set();
-for (const t of BH.TRAITS) { if (tids.has(t.id)) errs.push('特质重复: ' + t.id); tids.add(t.id); }
+for (const t of BH.TRAITS) {
+  if (tids.has(t.id)) errs.push('特质重复: ' + t.id);
+  tids.add(t.id);
+  if (!t.name || !t.emoji || !t.d) errs.push('特质字段不完整(需 name/emoji/d): ' + t.id);
+}
+for (const c of BH.CRISES) for (const o of c.opts) if (!o.rt) errs.push(`危机 ${c.id} 选项缺 rt（结算行会显示 undefined）: ` + o.id);
+for (const B of BH.BOSSES) for (const o of B.opts) if (!o.rt) errs.push(`大劫 ${B.id} 选项缺 rt: ` + o.id);
+for (const d of BH.DECADES) for (const o of d.opts) if (!o.rt) errs.push(`路牌 ${d.age} 选项缺 rt`);
 // ===== 成就 =====
 const aids = new Set();
 for (const a of BH.ACH || []) {

@@ -278,7 +278,8 @@ window.BH = window.BH || {};
         applyEff(S, t.e || {});
         (t.tg || []).forEach(x => addTag(S, x));
         const syn = (t.syn && t.syn.with || []).find(w2 => S.traits.includes(w2));
-        const text = syn ? t.t + '（与' + (BH.TRAITS.find(x => x.id === syn) || {}).name + '联动：' + t.syn.text + '）' : t.t;
+        let text = (t.emoji || '✦') + ' ' + t.name + '｜' + t.d;
+        if (syn) text += '（与' + (BH.TRAITS.find(x => x.id === syn) || { name: '' }).name + '联动：' + t.syn.text + '）';
         const line = { age: S.age, text: '✦ ' + text, grade: 1, trait: true, tags: [], danmaku: true };
         S.lines.push(line);
       }

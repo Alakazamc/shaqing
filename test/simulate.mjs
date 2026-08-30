@@ -10,6 +10,7 @@ let totalAge = 0, totalScore = 0, totalBox = 0, maxScore = 0, maxBox = 0;
 let decisions = [], durations = [], deaths = {}, trackEntries = {}, trackDepth = {};
 let legendaries = 0, rarePerRun = 0, compressPerRun = 0, lineCounts = [];
 let fails = 0;
+let undefLines = 0;
 const chNames = ['序幕0-12', '一幕13-18', '二幕19-35', '三幕36-60', '终幕61+'];
 const chLines = [0, 0, 0, 0, 0];
 function chIdx(a) { return a <= 12 ? 0 : a <= 18 ? 1 : a <= 35 ? 2 : a <= 60 ? 3 : 4; }
@@ -51,6 +52,7 @@ for (let run = 0; run < N; run++) {
     totalAge += S.age; totalScore += rep.score; totalBox += rep.box;
     maxScore = Math.max(maxScore, rep.score); maxBox = Math.max(maxBox, rep.box);
     decisions.push(dec); lineCounts.push(S.lines.length);
+    for (const l of S.lines) if ((l.text || '').includes('undefined')) undefLines++;
     rarePerRun += S.stats.rare + S.stats.epic; legendaries += S.stats.legend; compressPerRun += S.lines.filter(l => l.compress).length;
     for (const l of S.lines) chLines[chIdx(l.age)]++;
     deaths[S.deathCause.cause] = (deaths[S.deathCause.cause] || 0) + 1;
@@ -72,4 +74,5 @@ console.log(`轨道最深:`, trackDepth);
 const top = Object.entries(deaths).sort((a, b) => b[1] - a[1]).slice(0, 6);
 console.log(`死法 TOP6:`, top.map(([k, v]) => `${k}×${v}`).join(' | '));
 console.log('五幕行数/局:', chNames.map((n, i) => n + ':' + (chLines[i] / N).toFixed(1)).join(' | '));
+console.log(`undefined文本行: ${undefLines}（必须为0）`);
 console.log(`死法图鉴覆盖率: ${Object.keys(deaths).length}/${BH.DEATHS.length}`);
