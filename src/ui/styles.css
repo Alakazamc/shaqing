@@ -317,3 +317,20 @@ button:active { transform: scale(.96); }
 .evt.chapter .evt-text { color: #ffd28a; font-weight: 700; letter-spacing: 4px; font-size: 13px; }
 .evt.g1 .evt-body, .evt.g2 .evt-body, .evt.g3 .evt-body, .evt.askline .evt-body, .evt.death .evt-body { animation: riseL .3s ease; }
 .evt.g3 .evt-body { animation: goldIn .5s ease; }
+
+/* ============ 常驻信息板 v3 ============ */
+#hud { padding: 7px 8px; background: rgba(8,9,16,.42); border: 1px solid rgba(255,255,255,.07); border-radius: 12px; gap: 5px; }
+#hud-top { margin-bottom: 1px; }
+#hud-age { font-size: 17px; }
+#hud-right { display: flex; align-items: center; gap: 6px; }
+.hud-mini { font-size: 11px; color: #ffe19e; background: rgba(200,160,60,.1); border: 1px solid rgba(200,160,60,.3); padding: 2px 8px; border-radius: 999px; }
+.hud-btn { padding: 2px 9px; font-size: 12px; }
+.dim-pill.st { min-width: 56px; padding: 3px 7px 4px; gap: 2px; }
+.dim-pill.st span:first-child { font-size: 12px; }
+#hud-chips .chip { font-size: 10.5px; padding: 1px 8px; }
+#hud-cast { display: flex; gap: 4px; overflow-x: auto; width: 100%; scrollbar-width: none; }
+#hud-cast::-webkit-scrollbar { display: none; }
+#hud-cast .chip { font-size: 10.5px; padding: 1px 7px; flex: 0 0 auto; }
+.career { margin-top: 14px; background: rgba(8,9,16,.4); border: 1px solid rgba(255,255,255,.08); border-radius: 12px; padding: 10px 14px; }
+.career-row { font-size: 12.5px; color: #c9c9d6; line-height: 1.9; }
+.career-row:first-child { color: #ffd98a; }

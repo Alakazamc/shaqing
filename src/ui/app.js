@@ -30,6 +30,12 @@
   // ---------- 片名页 ----------
   function renderTitle() {
     $('#reinc-num').textContent = meta.reinc;
+    const career = $('#career');
+    if (meta.deaths > 0 || (meta.works || []).length > 0) {
+      career.classList.remove('hidden');
+      $('#career-1').textContent = `🎬 已杀青 ${meta.works.length} 部 · 轮回点数 ${meta.reinc}`;
+      $('#career-2').textContent = `🏆 最佳 ${meta.bestBox || 0}亿·${(meta.bestScore || 0).toFixed(1)}分　🪦 图鉴 ${Object.keys(meta.dex || {}).length}/${BH.DEATHS.length}　👑 成就 ${Object.keys(meta.ach || {}).length}/${BH.ACH.length}　🎞️ 结局 ${Object.keys(meta.endings || {}).length}/10`;
+    }
     evalAch(null); saveMeta();
     $('#btn-feast').classList.toggle('hidden', Object.keys(meta.endings || {}).length < 5);
     const dl = BH.DIRECTOR.filter(d => meta.deaths >= d.n).pop();
@@ -179,6 +185,7 @@
   function renderHUD() {
     $('#hud-age').firstChild.nodeValue = S.age + ' 岁 ';
     $('#hud-chapter').textContent = '· ' + (CHAPTER_NAME[BH.chapterOf(S.age).id] || '');
+    $('#hud-titles').textContent = '🏅' + S.titles.length;
     $('#hud-dims').innerHTML = Object.keys(DIM_NAMES).map(k => {
       let cls = '';
       if ((k === 'STR' && S.dims.STR <= 2) || (k === 'JOY' && S.dims.JOY <= 1) || (k === 'MNY' && S.dims.MNY <= -2)) cls = 'warn';
@@ -194,6 +201,9 @@
     }).join('');
     lastDims = { ...S.dims };
     renderChips();
+    const cast = S.talents.map(id => { const t = (BH.TALENTS || []).find(x => x.id === id); return t ? `<span class="chip">${t.emoji}${t.name}</span>` : ''; }).filter(Boolean);
+    const tr = S.traits.map(id => { const t = (BH.TRAITS || []).find(x => x.id === id); return t ? `<span class="chip chip-ob">✦${t.name}</span>` : ''; }).filter(Boolean);
+    $('#hud-cast').innerHTML = cast.join('') + tr.join('') || '<span class="chip" style="opacity:.5">暂无阵容</span>';
   }
 
   // ---- 命运 chips：当前剧本线与人生状态一览（透明化）----
