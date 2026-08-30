@@ -205,3 +205,37 @@ button:active { transform: scale(.96); }
 @media (prefers-reduced-motion: reduce) {
   *, *::before, *::after { animation-duration: .01ms !important; animation-iteration-count: 1 !important; transition-duration: .01ms !important; }
 }
+
+/* ============ 状态透明化：HUD 升级 + 命运 chips + 档案面板 ============ */
+#hud { flex-wrap: wrap; gap: 6px; }
+#hud-top { display: flex; align-items: center; justify-content: space-between; width: 100%; }
+#hud-age { font-size: 19px; }
+#hud-chapter { font-size: 11px; color: #8a8a98; margin-left: 4px; font-weight: 400; }
+.hud-btn { background: #1e1e28; border: 1px solid #34343f; color: #c9c9d6; font-size: 12px; padding: 4px 11px; border-radius: 999px; }
+.hud-btn:active { transform: scale(.94); }
+.dim-pill.st { display: inline-flex; flex-direction: column; gap: 3px; padding: 5px 8px 6px; min-width: 54px; }
+.dim-pill .bar { display: block; height: 3px; background: #2c2c37; border-radius: 2px; overflow: hidden; }
+.dim-pill .bar i { display: block; height: 100%; width: 20%; background: #7a86b8; border-radius: 2px; transition: width .45s ease; }
+.dim-pill.warn .bar i { background: #c96a3a; }
+.dim-pill.good .bar i { background: #c8a24a; }
+#hud-chips { display: flex; gap: 5px; flex-wrap: wrap; width: 100%; }
+.chip { font-size: 11px; padding: 2px 9px; border-radius: 999px; background: #191922; border: 1px solid #2c2c37; color: #a9a9ba; }
+.chip-track { border-color: #4a3f6e; color: #c9b8ee; }
+.chip-love { border-color: #6e3f5a; color: #eeb8d4; }
+.chip-warn { border-color: #7a4030; color: #ff9d7a; }
+.chip-ob { border-color: #3f6e5a; color: #a9e8cc; }
+#hud-chips .chip { cursor: pointer; }
+.profile-card { max-height: 84dvh; overflow-y: auto; }
+.pf-sec { margin-bottom: 13px; }
+.pf-h { font-size: 13px; color: #9ec1ff; font-weight: 700; margin-bottom: 7px; }
+.pf-dim { display: flex; align-items: center; gap: 8px; margin-bottom: 6px; font-size: 13px; }
+.pf-dim .lb { width: 64px; color: #c9c9d6; }
+.pf-dim .vl { width: 30px; font-weight: 800; text-align: right; }
+.pf-dim .pbar { flex: 1; height: 6px; background: #26262f; border-radius: 3px; overflow: hidden; }
+.pf-dim .pbar i { display: block; height: 100%; background: linear-gradient(90deg, #4f7fd0, #9b59d0); transition: width .4s; }
+.pf-dim .fl { width: 76px; font-size: 11px; color: #8a8a98; text-align: right; }
+.pf-chips { display: flex; flex-wrap: wrap; gap: 5px; }
+.pf-chips .chip { cursor: default; }
+.pf-row { display: flex; justify-content: space-between; font-size: 13px; padding: 4px 0; border-bottom: 1px dashed #26262f; }
+.pf-row b { color: #ffd98a; }
+.pf-empty { color: #5f5f6c; font-size: 12px; }

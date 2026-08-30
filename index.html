@@ -65,8 +65,12 @@
   <!-- 拍摄中 -->
   <section id="screen-life" class="screen hidden">
     <div id="hud">
-      <div id="hud-age">0 岁</div>
+      <div id="hud-top">
+        <div id="hud-age">0 岁 <span id="hud-chapter"></span></div>
+        <button id="btn-profile" class="hud-btn">📊 档案</button>
+      </div>
       <div id="hud-dims"></div>
+      <div id="hud-chips"></div>
     </div>
     <div id="stream-wrap">
       <div id="danmu-layer"></div>
@@ -82,6 +86,14 @@
       <div class="ask-card">
         <div id="ask-title" class="ask-title"></div>
         <div id="ask-opts" class="ask-opts"></div>
+      </div>
+    </div>
+    <!-- 演员档案 -->
+    <div id="profile" class="ask hidden" style="z-index:15">
+      <div class="ask-card profile-card">
+        <div class="ask-title">📊 演员档案 <span id="prof-age" style="color:#8a8a98;font-size:13px;font-weight:400"></span></div>
+        <div id="prof-body"></div>
+        <button id="btn-profile-close" class="mid-btn" style="margin-top:10px">收起</button>
       </div>
     </div>
     <!-- QTE -->

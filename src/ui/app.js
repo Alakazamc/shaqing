@@ -167,8 +167,18 @@
     addLine({ age: 0, text: '🎥 开机。你的人生开拍了。', grade: -1, tags: [], danmaku: false });
   }
   let lastDims = null;
+  const CHAPTER_NAME = { prologue: '序幕 · 童年', act1: '第一幕 · 少年', act2: '第二幕 · 青年', act3: '第三幕 · 中年', finale: '终幕 · 老年' };
+  const MNY_GRADE = v => v <= -3 ? '负债' : v < 0 ? '吃土' : v < 5 ? '温饱' : v < 10 ? '小康' : v < 15 ? '新贵' : '离谱';
+  const DIM_FLAVOR = {
+    CHR: v => v < 3 ? '路人脸' : v < 7 ? '清秀' : v < 10 ? '出众' : v < 13 ? '惊艳' : '神颜',
+    INT: v => v < 3 ? '迷糊' : v < 7 ? '够用' : v < 10 ? '聪明' : v < 13 ? '学霸' : '学神',
+    STR: v => v < 3 ? '脆皮' : v < 7 ? '正常' : v < 10 ? '结实' : v < 13 ? '铁人' : '超人',
+    MNY: MNY_GRADE,
+    JOY: v => v < 2 ? 'emo中' : v < 5 ? '平静' : v < 8 ? '开心' : v < 12 ? '幸福' : '人间值得',
+  };
   function renderHUD() {
-    $('#hud-age').textContent = S.age + ' 岁';
+    $('#hud-age').firstChild.nodeValue = S.age + ' 岁 ';
+    $('#hud-chapter').textContent = '· ' + (CHAPTER_NAME[BH.chapterOf(S.age).id] || '');
     $('#hud-dims').innerHTML = Object.keys(DIM_NAMES).map(k => {
       let cls = '';
       if ((k === 'STR' && S.dims.STR <= 2) || (k === 'JOY' && S.dims.JOY <= 1) || (k === 'MNY' && S.dims.MNY <= -2)) cls = 'warn';
@@ -179,10 +189,97 @@
         cls += ' bump';
         dd = `<span class="dd ${d > 0 ? 'up' : 'down'}">${d > 0 ? '+' : ''}${d}</span>`;
       }
-      return `<span class="dim-pill ${cls}">${DIM_NAMES[k][0]} ${S.dims[k]}${dd}</span>`;
+      const pct = Math.max(4, Math.min(100, ((S.dims[k] + 5) / 25) * 100));
+      return `<span class="dim-pill st ${cls}"><span>${DIM_NAMES[k][0]} <b>${S.dims[k]}</b>${dd}</span><span class="bar"><i style="width:${pct}%"></i></span></span>`;
     }).join('');
     lastDims = { ...S.dims };
+    renderChips();
   }
+
+  // ---- 命运 chips：当前剧本线与人生状态一览（透明化）----
+  function storyChips() {
+    const chips = [];
+    const F = f => S.flags.includes(f);
+    for (const tid in S.tracks) {
+      const tr = (BH.TRACKS || []).find(t => t.id === tid);
+      if (tr) chips.push({ t: `${tr.emoji || '🎞️'} ${tr.name} ${'●'.repeat(S.tracks[tid])}`, cls: 'chip-track' });
+    }
+    if (F('lo_dating') && !F('lo_married') && !F('mg_married')) chips.push({ t: '💞 拍拖中', cls: 'chip-love' });
+    if (F('lo_married') || F('mg_married')) chips.push({ t: '💍 已婚', cls: 'chip-love' });
+    if (F('married_soon') && !F('mg_married')) chips.push({ t: '💍 备婚中', cls: 'chip-love' });
+    if (F('lo_break')) chips.push({ t: '💔 分开过', cls: 'chip-emo' });
+    if (F('lo_miss')) chips.push({ t: '🥀 有遗憾', cls: 'chip-emo' });
+    if (S.debtSince >= 0) chips.push({ t: '💸 负债中', cls: 'chip-warn' });
+    if (F('debt_chain')) chips.push({ t: '💸 网贷', cls: 'chip-warn' });
+    if (F('mortgage')) chips.push({ t: '🏠 房贷', cls: 'chip-warn' });
+    if (F('ignore_health')) chips.push({ t: '🙈 讳疾忌医', cls: 'chip-warn' });
+    if (F('univ')) chips.push({ t: '🎓 本科' });
+    if (F('univ2')) chips.push({ t: '🎓 大专' });
+    if (F('gaokao_fail') && !F('gk_done')) chips.push({ t: '💥 落榜', cls: 'chip-warn' });
+    if (F('factory')) chips.push({ t: '🏭 打过螺丝' });
+    if (F('shangan')) chips.push({ t: '📚 上岸' });
+    if (F('survive35')) chips.push({ t: '🛡️ 挺过35' });
+    if (F('laidoff')) chips.push({ t: '📦 被优化过', cls: 'chip-warn' });
+    if (F('side_rescue') || F('side_prep')) chips.push({ t: '🚀 有副业' });
+    const ob = S.flags.find(f => f.startsWith('obsession_') && f !== 'obsession_letgo');
+    if (ob) {
+      const NAMES = { love: '被爱', chaos: '尽兴', fame: '留痕', rich: '富有' };
+      const key = ob.slice(10);
+      chips.push({ t: `💫 执念·${NAMES[key]} ${F('obsession_letgo') ? '已放下' : (S.tags[key] || 0) + '/3'}`, cls: 'chip-ob' });
+    }
+    return chips.slice(0, 7);
+  }
+  function renderChips() {
+    if (!$('#hud-chips')) return;
+    const chips = storyChips();
+    $('#hud-chips').innerHTML = chips.length
+      ? chips.map(c => `<span class="chip ${c.cls}">${c.t}</span>`).join('')
+      : '<span class="chip" style="opacity:.55">命运尚未展开 · 点击右上角看档案</span>';
+  }
+
+  // ---- 演员档案面板 ----
+  function openProfile() {
+    if (!S) return;
+    $('#prof-age').textContent = `· 第 ${S.age} 岁 · ${CHAPTER_NAME[BH.chapterOf(S.age).id] || ''}`;
+    const dimRows = Object.keys(DIM_NAMES).map(k => {
+      const pct = Math.max(4, Math.min(100, ((S.dims[k] + 5) / 25) * 100));
+      return `<div class="pf-dim"><span class="lb">${DIM_NAMES[k][1]}</span><span class="vl">${S.dims[k]}</span><span class="pbar"><i style="width:${pct}%"></i></span><span class="fl">${DIM_FLAVOR[k](S.dims[k])}</span></div>`;
+    }).join('');
+    const chipList = (arr, empty) => arr.length ? `<div class="pf-chips">${arr.join('')}</div>` : `<div class="pf-empty">${empty}</div>`;
+    const cast = S.talents.map(id => { const t = (BH.TALENTS || []).find(x => x.id === id); return t ? `<span class="chip">${t.emoji} ${t.name}</span>` : ''; }).filter(Boolean);
+    const traits = S.traits.map(id => { const t = (BH.TRAITS || []).find(x => x.id === id); return t ? `<span class="chip">${t.emoji} ${t.name}</span>` : ''; }).filter(Boolean);
+    const titles = (S.titles || []).map(id => { const t = (BH.TITLES || []).find(x => x.id === id); return t ? `<span class="chip">${t.emoji} ${t.name}</span>` : ''; }).filter(Boolean);
+    const trackRows = Object.keys(S.tracks).map(tid => {
+      const tr = (BH.TRACKS || []).find(t => t.id === tid);
+      if (!tr) return '';
+      const d = S.tracks[tid];
+      return `<div class="pf-row"><span>${tr.emoji || '🎞️'} ${tr.name}线</span><b>${'●'.repeat(d)}${'○'.repeat(Math.max(0, 6 - d))} ${d}/6</b></div>`;
+    }).join('');
+    const foot = [];
+    const FOOT = { univ: '🎓 考上了本科', univ2: '🎓 读了大专', gaokao_fail: '💥 高考落榜过', gk_repeat: '🔁 复读过', factory: '🏭 进过厂', street: '🛣️ 闯过社会', married_soon: '💍 领证了', mg_married: '💍 结婚了', lo_married: '💞 和初恋结婚', mortgage: '🏠 背上房贷', shangan: '📚 考公上岸', laidoff: '📦 被优化过', survive35: '🛡️ 挺过35岁', side_rescue: '🚀 副业救过场', someone_there: '🫂 有人拉过你', saw_doctor: '🩺 看过医生', debt_chain: '💸 借过网贷', ignore_health: '🙈 硬扛过病' };
+    for (const f of S.flags) if (FOOT[f]) foot.push(`<span class="chip">${FOOT[f]}</span>`);
+    let obHtml = '<div class="pf-empty">天台上还没想过这个问题</div>';
+    const ob = S.flags.find(f => f.startsWith('obsession_') && f !== 'obsession_letgo');
+    if (ob) {
+      const NAMES = { love: '被认真地爱过', chaos: '活得尽兴', fame: '留下点痕迹', rich: '富过就行' };
+      const key = ob.slice(10);
+      const st = S.flags.includes('obsession_letgo') ? '已放下（放下亦是圆满）'
+        : (S.tags[key] || 0) >= 3 ? `得偿 ${S.tags[key]}/3 ✅`
+        : `${S.tags[key] || 0}/3，还在路上`;
+      obHtml = `<div class="pf-row"><span>💫 ${NAMES[key]}</span><b>${st}</b></div>`;
+    }
+    $('#prof-body').innerHTML = `
+      <div class="pf-sec"><div class="pf-h">五维</div>${dimRows}</div>
+      <div class="pf-sec"><div class="pf-h">命运线</div>${trackRows || '<div class="pf-empty">还没有走入任何一条线。机缘是留给出门的人的。</div>'}</div>
+      <div class="pf-sec"><div class="pf-h">执念</div>${obHtml}</div>
+      <div class="pf-sec"><div class="pf-h">剧组（天赋）</div>${chipList(cast, '还没有天赋')}</div>
+      <div class="pf-sec"><div class="pf-h">特质</div>${chipList(traits, '还没有获得特质')}</div>
+      <div class="pf-sec"><div class="pf-h">称号</div>${chipList(titles, '还没有称号，攒一个？')}</div>
+      <div class="pf-sec"><div class="pf-h">人生足迹</div>${chipList(foot, '还没留下脚印')}</div>`;
+    showProfileSheet();
+  }
+  function showProfileSheet() { $('#profile').classList.remove('hidden'); }
+  function closeProfile() { $('#profile').classList.add('hidden'); }
   function addLine(line) {
     const cls = line.death ? 'death' : line.grade === -1 ? 'gm1' : line.grade === -2 ? 'gm1' : 'g' + line.grade;
     const el = document.createElement('div');
@@ -545,6 +642,10 @@
   })();
 
   // ---------- 启动 ----------
+  $('#btn-profile').onclick = openProfile;
+  $('#btn-profile-close').onclick = closeProfile;
+  const chipsEl0 = $('#hud-chips');
+  if (chipsEl0) chipsEl0.onclick = openProfile;
   applySound(); applyDanmu(); renderTitle();
   // demo 模式：?demo=1 自动跑一局到海报（供无头截图/自动化测试）
   if (new URLSearchParams(location.search).get('demo')) {
