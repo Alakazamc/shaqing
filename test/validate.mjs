@@ -56,6 +56,16 @@ for (const t of BH.TITLES || []) {
   if (!t.name || !t.emoji || typeof t.test !== 'function') errs.push('称号字段不完整: ' + t.id);
 }
 
+// ===== 天赋 schema =====
+const talentIds = new Set();
+for (const t of BH.TALENTS) {
+  if (talentIds.has(t.id)) errs.push('天赋重复: ' + t.id);
+  talentIds.add(t.id);
+  if (!t.name || !t.emoji || !t.desc) errs.push('天赋字段不完整(需 name/emoji/desc): ' + t.id);
+  if (![0, 1, 2, 3].includes(t.g)) errs.push('天赋 grade 非法: ' + t.id);
+  for (const k of Object.keys(t.eff || {})) if (!['CHR', 'INT', 'STR', 'MNY', 'JOY'].includes(k)) errs.push(`天赋 ${t.id} 非法效果键 ${k}`);
+}
+
 // ===== 死法 =====
 const causes = new Set();
 for (const d of BH.DEATHS) {

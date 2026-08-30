@@ -132,12 +132,29 @@
     { name: '躺平大师', d: { CHR: 3, INT: 3, STR: 4, MNY: 2, JOY: 8 } },
     { name: '赌狗必输', d: { CHR: 5, INT: 1, STR: 4, MNY: 8, JOY: 2 } },
     { name: '脆皮美人', d: { CHR: 7, INT: 3, STR: 1, MNY: 3, JOY: 6 } },
+    { name: '六边形战士', d: { CHR: 4, INT: 4, STR: 4, MNY: 4, JOY: 4 } },
+    { name: '玄学信众', d: { CHR: 6, INT: 1, STR: 3, MNY: 2, JOY: 8 } },
+    { name: '硬核狠人', d: { CHR: 1, INT: 2, STR: 9, MNY: 4, JOY: 4 } },
   ];
   function renderPoints() {
     show('#screen-points');
     const bonus = S.bonusPoints || 0;
-    $('#preset-row').innerHTML = PRESETS.map((p, i) => `<button data-i="${i}">${p.name}</button>`).join('');
-    $$('#preset-row button').forEach(b => b.onclick = () => { deltas = Object.assign({ CHR: 0, INT: 0, STR: 0, MNY: 0, JOY: 0 }, PRESETS[+b.dataset.i].d); drawPoints(bonus); });
+    $('#preset-row').innerHTML = PRESETS.map((p, i) => `<button data-i="${i}">${p.name}</button>`).join('')
+      + '<button id="btn-rand-pts">🎲随机人生</button>';
+    $$('#preset-row button[data-i]').forEach(b => b.onclick = () => { deltas = Object.assign({ CHR: 0, INT: 0, STR: 0, MNY: 0, JOY: 0 }, PRESETS[+b.dataset.i].d); drawPoints(bonus); });
+    const randBtn = $('#btn-rand-pts');
+    if (randBtn) randBtn.onclick = () => {
+      deltas = { CHR: 0, INT: 0, STR: 0, MNY: 0, JOY: 0 };
+      const ks = Object.keys(deltas).sort(() => Math.random() - 0.5);
+      let left = 20 + (S.bonusPoints || 0);
+      for (const k of ks) {
+        const add = Math.min(7 - deltas[k], left, 1 + Math.floor(Math.random() * 5));
+        deltas[k] += add; left -= add;
+        if (left <= 0) break;
+      }
+      while (left > 0) { const k = ks[(Math.random() * ks.length) | 0]; if (deltas[k] < 7) { deltas[k]++; left--; } }
+      drawPoints(bonus);
+    };
     $('#dims-rows').innerHTML = Object.keys(DIM_NAMES).map(k =>
       `<div class="dim-row" data-k="${k}"><div class="nm">${DIM_NAMES[k][1]}<small>${{ CHR: '好看程度', INT: '脑子', STR: '命值', MNY: '家底', JOY: '精神状态' }[k]}</small></div>
        <button class="minus">−</button><div class="val">3</div><button class="plus">＋</button></div>`).join('');
@@ -730,6 +747,11 @@
   }
   function autoDemo() {
     startRun('demo-seed-1');
+    if (new URLSearchParams(location.search).get('phase') === 'draft') {
+      setTimeout(() => { const cards = $$('#draft-grid .tcard'); [0, 1, 2].forEach(i => { cards[i].click(); cards[i].click(); }); }, 250);
+      return; // 截图选角页用
+    }
+
     setTimeout(() => {
       const cards = $$('#draft-grid .tcard');
       [0, 1, 2].forEach(i => { cards[i].click(); cards[i].click(); });
