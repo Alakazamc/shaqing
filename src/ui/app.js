@@ -463,7 +463,7 @@
     let t = '', list = [];
     if (ask.kind === 'branch') { t = '你的选择：'; list = ask.opts; }
     else if (ask.kind === 'crisis') {
-      t = ({ debt: '💸 怎么办？', emo: '🌧️ 想聊聊吗？', health: '🩺 怎么办？', opp: '✨ 机会来了' })[ask.domain] || '怎么办？';
+      t = ({ debt: '💸 怎么办？', emo: '🌧️ 想聊聊吗？', health: '🩺 怎么办？', opp: '✨ 机会来了', love: '💔 感情怎么了？' })[ask.domain] || '怎么办？';
       list = ask.opts.map(o => ({ ...o, gold: ask.domain === 'opp' }));
     }
     else if (ask.kind === 'decade') { t = '🪧 十年路牌'; list = ask.opts.map(o => ({ id: o.id, t: o.t, sub: o.sub })); }

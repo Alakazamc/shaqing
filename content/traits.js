@@ -2,7 +2,7 @@
 window.BH = window.BH || {};
 BH.TRAITS = [
   { id: 'yinyang', name: '阴阳怪气', emoji: '🐍', d: '社交事件分支+，面试大劫有奇效', e: { CHR: 1 }, tg: ['social'], syn: { with: ['zaoba'], text: '你的阴阳怪气进化成了"早八嘴替"' } },
-  { id: 'zaoba2', name: '早八战神', emoji: '⏰', d: '迟到事件免疫，体质微涨', e: { STR: 1 }, tg: ['study'] },
+  { id: 'zaoba2', name: '早八课代表', emoji: '⏰', d: '迟到事件免疫，体质微涨', e: { STR: 1 }, tg: ['study'] },
   { id: 'huabing', name: '画大饼', emoji: '🫓', d: '职场事件权重+，35 岁有惊喜（惊吓）', e: {}, tg: ['social'] },
   { id: 'jingshen', name: '精神攻击免疫', emoji: '🛡️', d: 'emo 事件伤害减半', e: { JOY: 1 }, tg: ['emo'] },
   { id: 'ganfan', name: '干饭之魂', emoji: '🍚', d: '快乐+体质双修', e: { JOY: 1, STR: 1 } },

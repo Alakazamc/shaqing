@@ -81,7 +81,7 @@ for (const B of BH.BOSSES) {
 }
 for (const c of BH.CRISES) {
   if (!c.opts.some(o => o.rt)) warns.push(`危机 ${c.id} 缺 rt 文本`);
-  if (!['debt', 'emo', 'health', 'opp'].includes(c.domain)) errs.push(`危机 ${c.id} 域非法`);
+  if (!['debt', 'emo', 'health', 'opp', 'love'].includes(c.domain)) errs.push(`危机 ${c.id} 域非法`);
   if (c.domain === 'emo' && !c.opts.some(o => o.clear === 'emo' || (o.f === 'someone_there'))) errs.push(`emo 危机 ${c.id} 缺出口选项（红线）`);
 }
 for (const d of BH.DECADES) for (const o of d.opts) if (!o.name || !o.desc || !o.rt) errs.push(`路牌 ${d.age} 选项不完整`);

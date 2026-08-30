@@ -114,7 +114,9 @@ window.BH = window.BH || {};
   // ---------- 事件池过滤 ----------
   function eventOk(S, ev) {
     if (S.seen[ev.id]) return false;
-    if (S.age < ev.a[0] || S.age > ev.a[1]) return false;
+    // 链节拍（旗标门控）窗口自动宽限 +3 年：节流与调度会推迟节拍，窗口不宽容就断链
+    const beatGrace = (ev.inc && ev.inc.f && ev.inc.f.length) ? 3 : 0;
+    if (S.age < ev.a[0] || S.age > ev.a[1] + beatGrace) return false;
     const inc = ev.inc || {}, exc = ev.exc || {};
     if (ev.mx && S.mxg[ev.mx] && S.mxg[ev.mx] !== ev.id) return false;
     if (inc.f && !inc.f.every(f => S.flags.includes(f))) return false;
@@ -195,6 +197,7 @@ window.BH = window.BH || {};
       if (S.age - cd < (c.cd || 8)) return false;
       const inc = c.inc || {};
       if (inc.f && !inc.f.every(f => S.flags.includes(f))) return false;
+      if (inc.tg && !inc.tg.every(t => S.tags[t])) return false;
       if (excOk(S, c)) return false;
       for (const k of Object.keys(trig)) {
         const v = S.dims[k], need = trig[k];
@@ -203,7 +206,7 @@ window.BH = window.BH || {};
       if (c.once && S.seen['C:' + c.id]) return false;
       return true;
     });
-    const pri = { health: 0, debt: 1, emo: 2, opp: 3 };
+    const pri = { health: 0, debt: 1, emo: 2, love: 2.5, opp: 3 };
     list.sort((a, b) => (pri[a.domain] ?? 9) - (pri[b.domain] ?? 9));
     return list;
   }

@@ -6,7 +6,7 @@ export function loadBH(root = path.resolve(import.meta.dirname, '..'), inject = 
   const win = { BH: {} };
   const files = [
     'src/engine/engine.js',
-    'content/talents.js', 'content/talents2.js', 'content/fillers.js', 'content/crises.js', 'content/decades.js',
+    'content/talents.js', 'content/talents2.js', 'content/fillers.js', 'content/crises.js', 'content/crises2.js', 'content/decades.js',
     'content/traits.js', 'content/bosses.js', 'content/tracks.js', 'content/deaths.js', 'content/deaths2.js',
     'content/events-child.js', 'content/events-teen.js', 'content/events-young.js',
     'content/events-mid.js', 'content/events-late.js', 'content/events-rare.js', 'content/events-extra.js', 'content/tracks2.js', 'content/events-more1.js', 'content/events-more2.js', 'content/events-more3.js', 'content/events-more4.js', 'content/events-more5.js', 'content/events-more6.js', 'content/arcs-boss.js', 'content/arcs-love.js', 'content/arcs-life.js', 'content/arcs-misc.js', 'content/arcs-echo.js', 'content/arcs-pack3.js', 'content/arcs-pack4.js', 'content/arcs-pack5.js', 'content/names.js', 'content/events-fill1.js', 'content/events-fill2.js', 'content/events-fill3.js', 'content/titles.js', 'content/misc.js',
