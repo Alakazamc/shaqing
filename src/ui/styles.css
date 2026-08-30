@@ -3,11 +3,39 @@
 html, body { height: 100%; }
 body {
   font-family: "PingFang SC", "Microsoft YaHei", system-ui, sans-serif;
-  background: #0c0c10; color: #e8e8ee;
+  color: #e8e8ee;
   display: flex; justify-content: center;
   overflow: hidden;
+  /* 片场夜景：深靛蓝多层渐变 */
+  background:
+    radial-gradient(1100px 700px at 78% -12%, rgba(74,66,168,.46) 0%, transparent 62%),
+    radial-gradient(900px 640px at -8% 104%, rgba(160,64,108,.28) 0%, transparent 58%),
+    radial-gradient(700px 500px at 50% 118%, rgba(44,84,132,.34) 0%, transparent 60%),
+    linear-gradient(180deg, #171a2b 0%, #10111c 55%, #0d0e16 100%);
+  background-attachment: fixed;
 }
-#app { width: 100%; max-width: 480px; height: 100dvh; position: relative; display: flex; flex-direction: column; }
+/* 暗角 */
+body::before {
+  content: ''; position: fixed; inset: 0; z-index: 0; pointer-events: none;
+  box-shadow: inset 0 0 140px rgba(0,0,0,.62);
+}
+/* 胶片颗粒（纯 CSS 点阵） */
+body::after {
+  content: ''; position: fixed; inset: 0; z-index: 0; pointer-events: none; opacity: .5;
+  background-image: radial-gradient(rgba(255,255,255,.028) 1px, transparent 1.2px);
+  background-size: 3px 3px;
+}
+/* 环境光斑 */
+.ambient { position: fixed; z-index: 0; pointer-events: none; }
+.amb1 { width: 480px; height: 480px; top: -12%; right: -18%;
+  background: radial-gradient(circle, rgba(104,92,230,.22) 0%, transparent 64%);
+  animation: drift1 26s ease-in-out infinite alternate; }
+.amb2 { width: 520px; height: 520px; bottom: -16%; left: -16%;
+  background: radial-gradient(circle, rgba(210,90,140,.15) 0%, transparent 64%);
+  animation: drift2 33s ease-in-out infinite alternate; }
+@keyframes drift1 { to { transform: translate(-60px, 50px) scale(1.12); } }
+@keyframes drift2 { to { transform: translate(50px, -46px) scale(1.08); } }
+#app { width: 100%; max-width: 480px; height: 100dvh; position: relative; z-index: 1; display: flex; flex-direction: column; }
 .screen { position: absolute; inset: 0; display: flex; flex-direction: column; padding: 20px 18px 14px; overflow-y: auto; }
 .hidden { display: none !important; }
 h2 { font-size: 20px; margin-bottom: 6px; }
@@ -26,7 +54,7 @@ button:active { transform: scale(.96); }
 .bottom-bar { padding: 10px 0 4px; }
 
 /* 片名页 */
-.brand { font-size: 44px; font-weight: 900; letter-spacing: 6px; margin-top: 8vh; }
+.brand { font-size: 44px; font-weight: 900; letter-spacing: 6px; margin-top: 8vh; text-shadow: 0 0 34px rgba(150,140,255,.35); }
 .brand-sub { color: #8f8f9d; margin-top: 6px; font-size: 14px; }
 .director { margin-top: 14px; font-size: 13px; color: #c8a24a; min-height: 20px; line-height: 1.6; }
 .shop { margin-top: 12px; background: #17171e; border: 1px solid #2c2c38; border-radius: 12px; padding: 12px; display: flex; flex-direction: column; gap: 8px; }
@@ -204,6 +232,7 @@ button:active { transform: scale(.96); }
 /* 无障碍：减少动效 */
 @media (prefers-reduced-motion: reduce) {
   *, *::before, *::after { animation-duration: .01ms !important; animation-iteration-count: 1 !important; transition-duration: .01ms !important; }
+  .ambient { animation: none !important; }
 }
 
 /* ============ 状态透明化：HUD 升级 + 命运 chips + 档案面板 ============ */
@@ -247,10 +276,10 @@ button:active { transform: scale(.96); }
 .evt-rail::before { content: ''; position: absolute; left: 50%; top: 0; bottom: 0; width: 2px; margin-left: -1px; background: #20202a; }
 #stream > .evt:first-child .evt-rail::before { top: 55%; }
 #stream > .evt:last-child .evt-rail::before { bottom: 55%; }
-.evt-dot { position: absolute; left: 50%; top: 9px; width: 8px; height: 8px; border-radius: 50%; transform: translateX(-50%); background: #4a4a56; z-index: 1; box-shadow: 0 0 0 2px #0c0c10; }
+.evt-dot { position: absolute; left: 50%; top: 9px; width: 8px; height: 8px; border-radius: 50%; transform: translateX(-50%); background: #4a4a56; z-index: 1; box-shadow: 0 0 0 2px #101219; }
 .evt.g1 .evt-dot { background: #4f7fd0; }
 .evt.g2 .evt-dot { background: #9b59d0; }
-.evt.g3 .evt-dot { background: #e8b13a; box-shadow: 0 0 0 2px #0c0c10, 0 0 10px rgba(232,177,58,.8); }
+.evt.g3 .evt-dot { background: #e8b13a; box-shadow: 0 0 0 2px #101219, 0 0 10px rgba(232,177,58,.8); }
 .evt.death .evt-dot { background: #e8e8ee; }
 .evt.askline .evt-dot { background: #e0705a; }
 .evt-body { padding: 6px 10px; border-radius: 10px; background: rgba(255,255,255,.028); }
