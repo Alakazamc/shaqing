@@ -280,20 +280,55 @@
   }
   function showProfileSheet() { $('#profile').classList.remove('hidden'); }
   function closeProfile() { $('#profile').classList.add('hidden'); }
+  const BOSS_NAME = { gaokao: '高考', qiuzhi: '求职', xiangqin: '相亲', caiyuan: '35岁危机', bingchuang: '病床' };
+  const TRACK_TAG_NAME = { dianjing: '电竞', xiuxian: '修仙', rich: '富豪', lie: '鹤岗', fame: '偶像', guaitan: '怪谈', shuochang: '说唱', ergci: '谷子', mofa: '魔法', aicy: 'AI' };
+  function lineCls(line) {
+    if (line.chapter) return 'chapter';
+    if (line.death) return 'death';
+    if (line.summary) return 'summary';
+    if (line.grade === -1 || line.grade === -2) return 'askline';
+    return 'g' + line.grade;
+  }
+  function badgeList(line) {
+    const b = [];
+    if (line.golden) b.push(['机缘', 'b-golden']);
+    if (line.boss) b.push(['大劫·' + (BOSS_NAME[line.boss] || ''), 'b-boss']);
+    if (line.crisis) b.push(['危机·' + ({ debt: '债务', emo: '情绪', health: '健康', opp: '机会' }[line.crisis] || ''), 'b-crisis']);
+    if (line.decade) b.push(['十年路牌', 'b-decade']);
+    if (line.arc) b.push(['剧本', 'b-arc']);
+    if (line.trackId || line.tags) {
+      const tg = line.trackId || (line.tags || []).find(t => TRACK_TAG_NAME[t]);
+      if (tg && TRACK_TAG_NAME[tg]) b.push([TRACK_TAG_NAME[tg] + '线', 'b-track']);
+    }
+    if (line.trait) b.push([line.ans ? '特质·习得' : '特质·三选一', 'b-trait']);
+    if (line.title) b.push(['称号', 'b-title']);
+    if (line.br) b.push(['抉择', 'b-branch']);
+    if (line.ans && !line.br && !line.crisis && !line.boss && !line.decade) b.push(['结果', 'b-ans']);
+    if (line.memory) b.push(['回忆', 'b-memory']);
+    if (line.compress) b.push(['快进', 'b-memory']);
+    if (line.summary) b.push(['小结', 'b-memory']);
+    if (line.death) b.push(['终幕', 'b-death']);
+    return b;
+  }
   function addLine(line) {
-    const cls = line.death ? 'death' : line.grade === -1 ? 'gm1' : line.grade === -2 ? 'gm1' : 'g' + line.grade;
+    const cls = lineCls(line);
+    const isDiv = line.chapter || line.summary;
     const el = document.createElement('div');
-    el.className = 'line ' + cls;
+    el.className = 'evt ' + cls;
     const prefix = line.grade === 3 ? '✨ ' : '';
-    if (line.grade >= 1) {
-      // 期待先于信息：先出晕
-      el.innerHTML = '<span style="opacity:.35">……</span>';
+    const badges = badgeList(line).map(([t, c]) => `<span class="badge ${c}">${t}</span>`).join('');
+    const metaHtml = isDiv ? '' : `<div class="evt-meta"><span class="evt-age">${line.age}岁</span>${badges}</div>`;
+    if (isDiv) {
+      el.innerHTML = `<div class="evt-body"><div class="evt-text">${esc(line.text)}</div></div>`;
       $('#stream').appendChild(el);
-      $('#stream-wrap').scrollTop = $('#stream-wrap').scrollHeight;
-      const txt = prefix + esc(line.text);
-      setTimeout(() => { el.textContent = txt; }, line.grade === 3 ? 500 : 300);
+    } else if (line.grade >= 1) {
+      // 期待先于信息：先出晕，后揭文
+      el.innerHTML = `<div class="evt-rail"><span class="evt-dot"></span></div><div class="evt-body">${metaHtml ? `<div class="evt-meta">${metaHtml}</div>` : ''}<div class="evt-text" style="opacity:.3">……</div></div>`;
+      $('#stream').appendChild(el);
+      const txtEl = el.querySelector('.evt-text');
+      setTimeout(() => { txtEl.textContent = prefix + line.text; txtEl.style.opacity = ''; }, line.grade === 3 ? 500 : 300);
     } else {
-      el.textContent = prefix + line.text;
+      el.innerHTML = `<div class="evt-rail"><span class="evt-dot"></span></div><div class="evt-body">${metaHtml ? `<div class="evt-meta">${metaHtml}</div>` : ''}<div class="evt-text">${esc(line.text)}</div></div>`;
       $('#stream').appendChild(el);
     }
     const st = $('#stream');

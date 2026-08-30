@@ -166,6 +166,8 @@ window.BH = window.BH || {};
     if (g >= 1) S.stats.tenRareMiss = 0;
     S.plainStreak = g === 0 ? (S.plainStreak || 0) + 1 : 0;
     const line = { age: S.age, text: ev.t, grade: g, br: !!ev.br, tags: ev.tags || [], danmaku: true };
+    if (ev.inc && ev.inc.f && ev.inc.f.length) line.arc = true;
+    if (ev.tr) line.trackId = ev.tr.id || ev.tr;
     S.lines.push(line);
     let ask = null;
     if (ev.br) {
@@ -229,7 +231,7 @@ window.BH = window.BH || {};
         (o.tg || []).forEach(t => addTag(S, t));
         if (o.f) addFlag(S, o.f);
         if (o.tr) S.tracks[o.tr.id] = Math.max(S.tracks[o.tr.id] || 0, o.tr.d || 1);
-        const line = { age: S.age, text: '→ ' + (o.rt || o.t), grade: 1, tags: o.tg || [], danmaku: true };
+        const line = { age: S.age, text: '→ ' + (o.rt || o.t), grade: 1, tags: o.tg || [], danmaku: true, ans: true };
         S.lines.push(line);
         syncQueue(S);
       }
@@ -246,7 +248,7 @@ window.BH = window.BH || {};
         (o.tg || []).forEach(t => addTag(S, t));
         if (o.f) addFlag(S, o.f);
         if (o.clear) { if (o.clear === 'debt') S.debtSince = -1; if (o.clear === 'emo') S.emoStrikes = 0; }
-        const line = { age: S.age, text: '→ ' + (o.rt || o.t), grade: 0, tags: o.tg || [], danmaku: o.dm !== false };
+        const line = { age: S.age, text: '→ ' + (o.rt || o.t), grade: 0, tags: o.tg || [], danmaku: o.dm !== false, ans: true };
         S.lines.push(line);
         syncQueue(S);
       }
@@ -311,7 +313,7 @@ window.BH = window.BH || {};
     applyEff(S, opt.e || {});
     if (opt.f) { addFlag(S, opt.f); syncQueue(S); }
     (opt.tg || []).forEach(t => addTag(S, t));
-    const line = { age: S.age, text: '★ ' + opt.rt, grade: 2, boss: B.id, tags: opt.tg || [], danmaku: true };
+    const line = { age: S.age, text: '★ ' + opt.rt, grade: 2, boss: B.id, tags: opt.tg || [], danmaku: true, ans: true };
     S.lines.push(line);
     S.stats.gradeSum += 2;
     return { line };

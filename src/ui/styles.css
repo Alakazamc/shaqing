@@ -239,3 +239,52 @@ button:active { transform: scale(.96); }
 .pf-row { display: flex; justify-content: space-between; font-size: 13px; padding: 4px 0; border-bottom: 1px dashed #26262f; }
 .pf-row b { color: #ffd98a; }
 .pf-empty { color: #5f5f6c; font-size: 12px; }
+
+/* ============ 事件展示 v2：剧本条 ============ */
+#stream { gap: 4px; }
+.evt { display: grid; grid-template-columns: 26px 1fr; column-gap: 8px; position: relative; }
+.evt-rail { position: relative; }
+.evt-rail::before { content: ''; position: absolute; left: 50%; top: 0; bottom: 0; width: 2px; margin-left: -1px; background: #20202a; }
+#stream > .evt:first-child .evt-rail::before { top: 55%; }
+#stream > .evt:last-child .evt-rail::before { bottom: 55%; }
+.evt-dot { position: absolute; left: 50%; top: 9px; width: 8px; height: 8px; border-radius: 50%; transform: translateX(-50%); background: #4a4a56; z-index: 1; box-shadow: 0 0 0 2px #0c0c10; }
+.evt.g1 .evt-dot { background: #4f7fd0; }
+.evt.g2 .evt-dot { background: #9b59d0; }
+.evt.g3 .evt-dot { background: #e8b13a; box-shadow: 0 0 0 2px #0c0c10, 0 0 10px rgba(232,177,58,.8); }
+.evt.death .evt-dot { background: #e8e8ee; }
+.evt.askline .evt-dot { background: #e0705a; }
+.evt-body { padding: 6px 10px; border-radius: 10px; background: rgba(255,255,255,.028); }
+.evt-meta { display: flex; align-items: center; gap: 5px; margin-bottom: 3px; flex-wrap: wrap; }
+.evt-age { font-size: 10px; color: #5f5f6c; font-weight: 700; margin-right: 2px; }
+.badge { display: inline-block; font-size: 10px; line-height: 1.5; padding: 0 7px; border-radius: 999px; border: 1px solid transparent; }
+.b-golden { color: #ffd98a; border-color: #8a6a1f; background: rgba(232,177,58,.12); }
+.b-boss { color: #ff9d8a; border-color: #8a3a2e; background: rgba(232,68,58,.12); }
+.b-crisis { color: #ff9d8a; border-color: #7a4030; }
+.b-decade { color: #ffd28a; border-color: #6a5a2e; }
+.b-arc { color: #9ec1ff; border-color: #2e4a7a; }
+.b-track { color: #d2a6ff; border-color: #5a3a7a; }
+.b-trait { color: #9ec1ff; border-color: #2e4a7a; }
+.b-title { color: #ffe19e; border-color: #8a6a1f; }
+.b-branch { color: #9ec1ff; border-color: #2e4a7a; }
+.b-ans { color: #a9e8cc; border-color: #2e5a46; }
+.b-memory { color: #8a8a98; border-color: #3a3a46; }
+.b-death { color: #fff; border-color: #6a6a76; }
+.evt-text { font-size: 14.5px; line-height: 1.6; color: #c9c9d6; word-break: break-word; }
+.evt.g0 .evt-text { font-size: 13px; color: #6f6f7e; }
+.evt.g1 .evt-text { color: #9ec1ff; }
+.evt.g2 .evt-text { color: #d2a6ff; }
+.evt.g3 .evt-text { font-size: 16px; font-weight: 700; color: #ffd98a; }
+.evt.askline .evt-text { color: #ff9d8a; font-weight: 600; }
+.evt.death .evt-body { background: rgba(255,255,255,.07); }
+.evt.death .evt-text { color: #fff; font-weight: 700; }
+.evt.ans .evt-body { margin-left: 12px; background: rgba(127,224,160,.055); }
+.evt.ans .evt-text { color: #a9e8cc; font-size: 13.5px; }
+.evt.summary { grid-template-columns: 0 1fr; }
+.evt.summary .evt-rail { display: none; }
+.evt.summary .evt-body { background: none; text-align: center; font-size: 11.5px; color: #5f5f6c; padding: 2px; }
+.evt.chapter { grid-template-columns: 0 1fr; margin-top: 10px; }
+.evt.chapter .evt-rail { display: none; }
+.evt.chapter .evt-body { background: none; text-align: center; padding: 4px 0 2px; }
+.evt.chapter .evt-text { color: #ffd28a; font-weight: 700; letter-spacing: 4px; font-size: 13px; }
+.evt.g1 .evt-body, .evt.g2 .evt-body, .evt.g3 .evt-body, .evt.askline .evt-body, .evt.death .evt-body { animation: riseL .3s ease; }
+.evt.g3 .evt-body { animation: goldIn .5s ease; }
