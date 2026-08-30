@@ -10,6 +10,7 @@ let totalAge = 0, totalScore = 0, totalBox = 0, maxScore = 0, maxBox = 0;
 let decisions = [], durations = [], deaths = {}, trackEntries = {}, trackDepth = {};
 let legendaries = 0, rarePerRun = 0, compressPerRun = 0, lineCounts = [];
 let fails = 0;
+let momentLines = 0;
 let undefLines = 0;
 const chNames = ['序幕0-12', '一幕13-18', '二幕19-35', '三幕36-60', '终幕61+'];
 const chLines = [0, 0, 0, 0, 0];
@@ -28,7 +29,7 @@ for (let run = 0; run < N; run++) {
     S.sex = Math.random() < 0.5 ? 'm' : 'f';
 
     let dec = 0, guard = 0;
-    while (S.phase === 'life' && guard++ < 3000) {
+    while (S.phase === 'life' && guard++ < 6000) {
       const r = BH.tick(S);
       if (!r) break;
       if (r.ask) {
@@ -52,7 +53,7 @@ for (let run = 0; run < N; run++) {
     totalAge += S.age; totalScore += rep.score; totalBox += rep.box;
     maxScore = Math.max(maxScore, rep.score); maxBox = Math.max(maxBox, rep.box);
     decisions.push(dec); lineCounts.push(S.lines.length);
-    for (const l of S.lines) if ((l.text || '').includes('undefined')) undefLines++;
+    for (const l of S.lines) { if ((l.text || '').includes('undefined')) undefLines++; if (l.moment) momentLines++; }
     rarePerRun += S.stats.rare + S.stats.epic; legendaries += S.stats.legend; compressPerRun += S.lines.filter(l => l.compress).length;
     for (const l of S.lines) chLines[chIdx(l.age)]++;
     deaths[S.deathCause.cause] = (deaths[S.deathCause.cause] || 0) + 1;
@@ -67,6 +68,7 @@ console.log(`平均寿命: ${(totalAge / N).toFixed(1)} 岁`);
 console.log(`平均评分: ${(totalScore / N).toFixed(2)} | 最高 ${maxScore}`);
 console.log(`平均票房: ${(totalBox / N).toFixed(1)} 亿 | 最高 ${maxBox} 亿`);
 console.log(`平均决策数: ${(decisions.reduce((a, b) => a + b, 0) / N).toFixed(1)}`);
+console.log(`瞬间行/局: ${(momentLines / N).toFixed(1)}`);
 console.log(`平均展示行数: ${(lineCounts.reduce((a, b) => a + b, 0) / N).toFixed(0)}`);
 console.log(`平均稀有+史诗/局: ${(rarePerRun / N).toFixed(1)} | 传说/局: ${(legendaries / N).toFixed(2)} | 压缩/局: ${(compressPerRun / N).toFixed(1)}`);
 console.log(`轨道进入率:`, Object.fromEntries(Object.entries(trackEntries).map(([k, v]) => [k, (v / N * 100).toFixed(1) + '%'])));

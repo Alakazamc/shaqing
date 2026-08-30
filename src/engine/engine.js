@@ -44,7 +44,7 @@ window.BH = window.BH || {};
       sex: null, talents: [], traits: [],
       flags: [], tags: {}, tracks: {},
       wlog: [], lines: [], // {age,text,grade,br}
-      seen: {}, plainStreak: 0, queue: [], titles: [],
+      seen: {}, plainStreak: 0, queue: [], titles: [], moments: 0,
       stats: { gradeSum: 0, legend: 0, rare: 0, epic: 0, branches: 0, crises: 0, golden: 0 },
       decade: {}, bossDone: {}, traitDone: {},
       crisisCd: {}, debtSince: -1, emoStrikes: 0,
@@ -134,7 +134,7 @@ window.BH = window.BH || {};
     const g = ev.g || 0;
     // 剧本节拍（story/inc.f）豁免稀有度税并高动量续演（20-arcs.md §1）
     const isBeat = !!(ev.inc && ev.inc.f && ev.inc.f.length);
-    if (ev.br && S.age - (S.lastAskYear === undefined ? -9 : S.lastAskYear) < 2) x *= 0.15;
+    if (ev.br && S.age - (S.lastSoftAsk === undefined ? -9 : S.lastSoftAsk) < 2) x *= 0.15;
     if (ev.story) x *= 30;
     else if (isBeat) x *= 12;
     else { if (g === 1) x *= 0.35; if (g === 2) x *= 0.12; if (g === 3) x *= 0.03; }
@@ -186,7 +186,8 @@ window.BH = window.BH || {};
   function crisisCandidates(S) {
     const list = (BH.CRISES || []).filter(c => {
       if (S.age < (c.a ? c.a[0] : 0) || S.age > (c.a ? c.a[1] : 999)) return false;
-      let trig = c.trig || {};
+      if (S.age - (S.lastCrisisYear === undefined ? -9 : S.lastCrisisYear) < 3) return false;
+    let trig = c.trig || {};
     if (c.domain === 'health' && S.traits.includes('pao') && trig.STR) trig = Object.assign({}, trig, { STR: [trig.STR[0] - 1, '<'] });
     const cd = S.crisisCd[c.id] || -99;
       if (S.age - cd < (c.cd || 8)) return false;
@@ -213,6 +214,7 @@ window.BH = window.BH || {};
 
   function askCrisis(S, c) {
     S.crisisCd[c.id] = S.age;
+    S.lastCrisisYear = S.age;
     S.seen['C:' + c.id] = 1;
     S.stats.crises++;
     if (c.domain === 'debt' && S.debtSince < 0) S.debtSince = S.age;
@@ -382,13 +384,30 @@ window.BH = window.BH || {};
   E.tick = function (S) {
     const r = _tick(S);
     if (S.pendingLine && r) { r.extra = [].concat(r.extra || [], S.pendingLine); S.pendingLine = null; }
-    if (r && r.ask) S.lastAskYear = S.age;
+    if (r && r.ask && ['crisis', 'trait', 'branch', 'golden'].includes(r.ask.kind)) S.lastSoftAsk = S.age;
     return r;
   };
 
   function _tick(S) {
     if (S.phase !== 'life') return null;
+
+    // 瞬间事件：日常小事不消耗年份（21-rhythm.md §4——一次点击≠一年）
+    if ((S.moments || 0) < 2 && S.age >= 5) {
+      const mp = (BH.EVENTS || []).filter(ev => ev.g === 0 && !ev.br && !ev.tr && !ev.flag && !(ev.inc && (ev.inc.f || ev.inc.tg || ev.inc.tr)) && eventOk(S, ev));
+      if (mp.length && S.R() < 0.32) {
+        S.moments = (S.moments || 0) + 1;
+        const ev = drawEvent(S, mp);
+        const r = emit(S, runEvent(S, ev));
+        S.stats.gradeSum -= 1; // 瞬间不计入基础盘
+        S.plainStreak = Math.max(0, (S.plainStreak || 0) - 1); // 瞬间也不计入平淡连击
+        if (r.line) r.line.moment = true;
+        syncQueue(S);
+        return r;
+      }
+    }
+
     S.age++;
+    S.moments = 0;
     for (const tid of S.talents) {
       const tl = BH.TALENTS.find(x => x.id === tid);
       if (tl && tl.late && S.age >= tl.late.age && !S.seen['LT:' + tid]) { S.seen['LT:' + tid] = 1; applyEff(S, tl.late.e || {}); }
@@ -484,8 +503,8 @@ window.BH = window.BH || {};
         if (!S.seen[ev.id] && ev.a[1] + 2 >= S.age) S.queue.push(qid);
         continue;
       }
-      // 分支节流：抉择之间至少隔 2 年，不到点就留队明年再来
-      if (ev.br && S.age - (S.lastAskYear === undefined ? -9 : S.lastAskYear) < 2) { S.queue.push(ev.id); continue; }
+      // 分支节流：软抉择之间至少隔 2 年（大劫/路牌是硬时刻不计数），不到点留队
+      if (ev.br && S.age - (S.lastSoftAsk === undefined ? -9 : S.lastSoftAsk) < 2) { S.queue.push(ev.id); continue; }
       const r = emit(S, runEvent(S, ev));
       syncQueue(S);
       const extras = [];
@@ -574,7 +593,7 @@ window.BH = window.BH || {};
     for (const qid of S.queue) { const qe = (BH.EVENTS || []).find(x => x.id === qid); if (qe) cps.push(qe.a[1] + 1); }
     const cpFiltered = cps.filter(a => a > S.age);
     const next = cpFiltered.length ? Math.min(...cpFiltered) : S.lif;
-    let jump = 3 + ((S.R() * 3) | 0);
+    let jump = (S.age <= 18 ? 2 : 3) + ((S.R() * 3) | 0);
     jump = Math.min(jump, next - 1 - S.age);
     if (jump >= 2) {
       const y0 = S.age, y1 = S.age + jump;

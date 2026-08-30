@@ -2,7 +2,7 @@
 window.BH = window.BH || {};
 BH.EVENTS = BH.EVENTS || [];
 BH.EVENTS.push(
-  { id: 'lo0', a: [14, 16], g: 2, w: 4, story: true, t: '新学期换座位，TA 坐到了你斜前方。阳光从TA那个角度照进来，你看黑板的时候总觉得少了点什么。', br: [
+  { id: 'lo0', a: [13, 17], g: 2, w: 5, story: true, t: '新学期换座位，TA 坐到了你斜前方。阳光从TA那个角度照进来，你看黑板的时候总觉得少了点什么。', br: [
     { t: '主动借笔记认识', rt: '你借了TA的笔记还回去时夹了一颗糖。TA回头看你一眼，那一眼你存了很久。', e: { CHR: 1, JOY: 2 }, tg: ['love'], f: 'lo_met' },
     { t: '装作不在意', rt: '你上课开始走神，成绩单先知道了你的心事。', e: { INT: -1, JOY: 1 }, tg: ['love'], f: 'lo_met' },
   ] },
