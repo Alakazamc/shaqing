@@ -308,10 +308,10 @@ button:active { transform: scale(.96); }
 .evt.death .evt-text { color: #fff; font-weight: 700; }
 .evt.ans .evt-body { margin-left: 12px; background: rgba(127,224,160,.055); }
 .evt.ans .evt-text { color: #a9e8cc; font-size: 13.5px; }
-.evt.summary { grid-template-columns: 0 1fr; }
+.evt.summary { grid-template-columns: 1fr; }
 .evt.summary .evt-rail { display: none; }
 .evt.summary .evt-body { background: none; text-align: center; font-size: 11.5px; color: #5f5f6c; padding: 2px; }
-.evt.chapter { grid-template-columns: 0 1fr; margin-top: 10px; }
+.evt.chapter { grid-template-columns: 1fr; margin-top: 10px; }
 .evt.chapter .evt-rail { display: none; }
 .evt.chapter .evt-body { background: none; text-align: center; padding: 4px 0 2px; }
 .evt.chapter .evt-text { color: #ffd28a; font-weight: 700; letter-spacing: 4px; font-size: 13px; }

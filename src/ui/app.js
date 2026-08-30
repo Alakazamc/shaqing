@@ -448,6 +448,7 @@
     $('#boss-line').style.display = 'none';
     $('#boss').classList.remove('hidden');
     const goBtn = document.createElement('button');
+    goBtn.id = 'boss-go';
     goBtn.className = 'mid-btn'; goBtn.textContent = '开始结算';
     goBtn.style.marginTop = '6px';
     $('#boss-calc').appendChild(goBtn);
@@ -486,6 +487,7 @@
     }
   }
   function playBossShow(B, ask, clicks) {
+    $('#boss').classList.remove('hidden');
     const score = BH.bossScore(S, ask.age, clicks);
     const band = BH.bossBand(S, ask.age, score);
     const calc = $('#boss-calc'); calc.innerHTML = '';
@@ -526,7 +528,10 @@
               $('#boss').classList.add('hidden');
               const r = BH.choose(S, 'boss', band, { age: ask.age });
               if (r.line) addLine(r.line);
+              if (r.extra) [].concat(r.extra).forEach(addLine);
+              pendingAsk = null;
               renderHUD();
+              if (S.phase === 'end') { busy = true; setTimeout(settlement, 1400); }
             };
         }, 350);
       }
@@ -703,11 +708,15 @@
       if (pendingAsk) {
         const a = pendingAsk;
         if (a.kind === 'boss') {
-          const clicks = a.age === 18 ? 60 : null;
-          const score = BH.bossScore(S, a.age, clicks);
-          const band = BH.bossBand(S, a.age, score);
-          BH.choose(S, 'boss', band, { age: a.age });
-          closeAsk(); pendingAsk = null; return;
+          // 走真实 UI 路径：QTE 狂点 → 开始结算 → 继续（验证不卡死）
+          const qbtn = $('#qte-btn');
+          if (!$('#qte').classList.contains('hidden') && qbtn) { qbtn.click(); return; }
+          const go = $('#boss-go');
+          if (!$('#boss').classList.contains('hidden') && go && !$('#boss-calc').contains(go)) return;
+          if (!$('#boss').classList.contains('hidden') && go) { go.click(); return; }
+          const ok = $('#boss-ok');
+          if (!$('#boss').classList.contains('hidden') && ok && !ok.classList.contains('hidden')) ok.click();
+          return;
         }
         const opt = a.opts[0];
         if (a.kind === 'golden') { BH.choose(S, 'golden', 'join', a); }
