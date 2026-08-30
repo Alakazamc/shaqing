@@ -120,6 +120,15 @@ for (const e of BH.EVENTS) {
   for (const f of ((e.inc && e.inc.f) || [])) if (!setters.has(f)) { warns.push(`事件 ${e.id} 引用无人设置的旗标 inc.f:${f}`); flagWarn++; }
 }
 
+// ===== 平淡文本检测（文案质量门禁）=====
+const hasNum = t => /[0-9一二三四五六七八九十百千万亿]+(年|块|次|个|岁|页|张|条|顿|双|件|步|楼|站|折|名|%)/.test(t);
+const hasTurn = t => /最后|直到|结果|后来|居然|竟然|偏偏|其实|——|…/.test(t);
+let flatN = 0;
+for (const e of BH.EVENTS) {
+  if (e.t.startsWith('你的') && !hasNum(e.t) && !hasTurn(e.t) && e.t.length < 34) { flatN++; if (flatN <= 5) warns.push('平淡文本[' + e.id + ']: ' + e.t.slice(0, 30)); }
+}
+console.log('平淡文本: ' + flatN + '/' + BH.EVENTS.length);
+
 // ===== 汇总 =====
 console.log(`事件总数: ${BH.EVENTS.length}（含轨道 ${(BH.TRACKS || []).reduce((n, t) => n + (t.events || []).length, 0)}）`);
 console.log(`天赋 ${BH.TALENTS.length} | 死法 ${BH.DEATHS.length} | 危机 ${BH.CRISES.length} | 路牌 ${BH.DECADES.length} | 特质 ${BH.TRAITS.length} | 大劫 ${BH.BOSSES.length}`);
