@@ -392,9 +392,9 @@ window.BH = window.BH || {};
     if (S.phase !== 'life') return null;
 
     // 瞬间事件：日常小事不消耗年份（21-rhythm.md §4——一次点击≠一年）
-    if ((S.moments || 0) < 2 && S.age >= 5) {
+    if ((S.moments || 0) < 2 && S.age >= 4) {
       const mp = (BH.EVENTS || []).filter(ev => ev.g === 0 && !ev.br && !ev.tr && !ev.flag && !(ev.inc && (ev.inc.f || ev.inc.tg || ev.inc.tr)) && eventOk(S, ev));
-      if (mp.length && S.R() < 0.32) {
+      if (mp.length && S.R() < 0.55) {
         S.moments = (S.moments || 0) + 1;
         const ev = drawEvent(S, mp);
         const r = emit(S, runEvent(S, ev));
